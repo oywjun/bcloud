@@ -8,15 +8,16 @@ import http
 import http.client
 import mimetypes
 import os
-import sys
+import traceback
 import urllib.parse
 import urllib.request
 import zlib
 
-sys.path.insert(0, os.path.dirname(__file__))
-import const
+from bcloud import const
+from bcloud.log import logger
 
 RETRIES = 3
+TIMEOUT = 50
 
 default_headers = {
     'User-agent': const.USER_AGENT,
@@ -27,7 +28,7 @@ default_headers = {
     'Accept-encoding': 'gzip, deflate',
     'Pragma': 'no-cache',
     'Cache-control': 'no-cache',
-    }
+}
 
 def urloption(url, headers={}, retries=RETRIES):
     '''发送OPTION 请求'''
@@ -35,14 +36,14 @@ def urloption(url, headers={}, retries=RETRIES):
     for key in headers.keys():
         headers_merged[key] = headers[key]
     schema = urllib.parse.urlparse(url)
-    for _ in range(retries):
+    for i in range(retries):
         try:
             conn = http.client.HTTPConnection(schema.netloc)
             conn.request('OPTIONS', url, headers=headers_merged)
             resp = conn.getresponse()
             return resp
-        except OSError as e:
-            print(e)
+        except OSError:
+            logger.error(traceback.format_exc())
     return None
 
 
@@ -50,11 +51,20 @@ class ForbiddenHandler(urllib.request.HTTPErrorProcessor):
 
     def http_error_403(self, req, fp, code, msg, headers):
         return fp
+
     http_error_400 = http_error_403
     http_error_500 = http_error_403
 
 
-def urlopen(url, headers={}, data=None, retries=RETRIES):
+def urlopen_simple(url, retries=RETRIES, timeout=TIMEOUT):
+    for i in range(retries):
+        try:
+            return urllib.request.urlopen(url, timeout=timeout)
+        except OSError:
+            logger.error(traceback.format_exc())
+    return None
+
+def urlopen(url, headers={}, data=None, retries=RETRIES, timeout=TIMEOUT):
     '''打开一个http连接, 并返回Request.
 
     headers 是一个dict. 默认提供了一些项目, 比如User-Agent, Referer等, 就
@@ -71,9 +81,9 @@ def urlopen(url, headers={}, data=None, retries=RETRIES):
     opener = urllib.request.build_opener(ForbiddenHandler)
     opener.addheaders = [(k, v) for k,v in headers_merged.items()]
 
-    for _ in range(retries):
+    for i in range(retries):
         try:
-            req = opener.open(url, data=data)
+            req = opener.open(url, data=data, timeout=timeout)
             encoding = req.headers.get('Content-encoding')
             req.data = req.read()
             if encoding == 'gzip':
@@ -81,8 +91,8 @@ def urlopen(url, headers={}, data=None, retries=RETRIES):
             elif encoding == 'deflate':
                 req.data = zlib.decompress(req.data, -zlib.MAX_WBITS)
             return req
-        except OSError as e:
-            print(e)
+        except OSError:
+            logger.error(traceback.format_exc())
     return None
 
 def urlopen_without_redirect(url, headers={}, data=None, retries=RETRIES):
@@ -96,7 +106,7 @@ def urlopen_without_redirect(url, headers={}, data=None, retries=RETRIES):
         headers_merged[key] = headers[key]
 
     parse_result = urllib.parse.urlparse(url)
-    for _ in range(retries):
+    for i in range(retries):
         try:
             conn = http.client.HTTPConnection(parse_result.netloc)
             if data:
@@ -104,8 +114,8 @@ def urlopen_without_redirect(url, headers={}, data=None, retries=RETRIES):
             else:
                 conn.request('GET', url, body=data, headers=headers_merged)
             return conn.getresponse()
-        except OSError as e:
-            print(e)
+        except OSError:
+            logger.error(traceback.format_exc())
     return None
 
 def post_multipart(url, headers, fields, files, retries=RETRIES):
@@ -118,7 +128,7 @@ def post_multipart(url, headers, fields, files, retries=RETRIES):
     headers_merged['Content-Type'] = content_type
     headers_merged['Content-length'] = str(len(body))
 
-    for _ in range(retries):
+    for i in range(retries):
         try:
             h = http.client.HTTPConnection(schema.netloc)
             h.request('POST', url, body=body, headers=headers_merged)
@@ -130,8 +140,8 @@ def post_multipart(url, headers, fields, files, retries=RETRIES):
             elif encoding == 'deflate':
                 req.data = zlib.decompress(req.data, -zlib.MAX_WBITS)
             return req
-        except OSError as e:
-            print(e)
+        except OSError:
+            logger.error(traceback.format_exc())
     return None
 
 def encode_multipart_formdata(fields, files):
@@ -143,8 +153,8 @@ def encode_multipart_formdata(fields, files):
     l = []
     for (key, value) in fields:
         l.append(S_BOUNDARY)
-        l.append(
-            'Content-Disposition: form-data; name="{0}"'.format(key).encode())
+        l.append('Content-Disposition: form-data; name="{0}"'.format(
+                key).encode())
         l.append(BLANK)
         l.append(value.encode())
     for (key, filename, content) in files:

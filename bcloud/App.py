@@ -4,8 +4,6 @@
 
 import os
 import random
-import sys
-sys.path.insert(0, os.path.dirname(__file__))
 import time
 
 from gi.repository import Gdk
@@ -15,28 +13,36 @@ from gi.repository import GObject
 from gi.repository import Gtk
 from gi.repository import Notify
 
-import Config
+from bcloud import Config
 Config.check_first()
 _ = Config._
-import gutil
-import util
-from MimeProvider import MimeProvider
-from PreferencesDialog import PreferencesDialog
+from bcloud import const
+from bcloud.const import TargetInfo, TargetType
+from bcloud import gutil
+from bcloud.log import logger
+from bcloud import util
+from bcloud.MimeProvider import MimeProvider
+from bcloud.PreferencesDialog import PreferencesDialog
+from bcloud.CategoryPage import *
+from bcloud.CloudPage import CloudPage
+from bcloud.DownloadPage import DownloadPage
+from bcloud.HomePage import HomePage
+from bcloud.PreferencesDialog import PreferencesDialog
+from bcloud.SigninDialog import SigninDialog
+from bcloud.TrashPage import TrashPage
+from bcloud.UploadPage import UploadPage
 
-from CategoryPage import *
-from CloudPage import CloudPage
-from DownloadPage import DownloadPage
-from HomePage import HomePage
-from PreferencesDialog import PreferencesDialog
-from SigninDialog import SigninDialog
-from TrashPage import TrashPage
-from UploadPage import UploadPage
-
-if Gtk.MAJOR_VERSION <= 3 and Gtk.MINOR_VERSION < 10:
+if Config.GTK_LE_36:
     GObject.threads_init()
 (ICON_COL, NAME_COL, TOOLTIP_COL, COLOR_COL) = list(range(4))
 BLINK_DELTA = 250    # 字体闪烁间隔, 250 miliseconds 
 BLINK_SUSTAINED = 3  # 字体闪烁持续时间, 5 seconds
+
+# 用于处理拖放上传
+DROP_TARGETS = (
+    (TargetType.URI_LIST, Gtk.TargetFlags.OTHER_APP, TargetInfo.URI_LIST),
+)
+DROP_TARGET_LIST = [Gtk.TargetEntry.new(*t) for t in DROP_TARGETS]
 
 
 class App:
@@ -56,31 +62,26 @@ class App:
         self.app.connect('shutdown', self.on_app_shutdown)
 
     def on_app_startup(self, app):
+        GLib.set_application_name(Config.APPNAME)
         self.icon_theme = Gtk.IconTheme.get_default()
-        #self.icon_theme.append_search_path(Config.ICON_PATH)
+        self.icon_theme.append_search_path(Config.ICON_PATH)
         self.mime = MimeProvider(self)
         self.color_schema = Config.load_color_schema()
         self.set_dark_theme(True)
 
         self.window = Gtk.ApplicationWindow.new(application=app)
         self.window.set_default_size(*gutil.DEFAULT_PROFILE['window-size'])
-        GLib.set_prgname(Config.NAME)
-        GLib.set_application_name(Config.APPNAME)
-        self.window.set_icon_from_file(Config.ICON_PATH)
+        self.window.set_default_icon_name(Config.NAME)
+        self.window.props.window_position = Gtk.WindowPosition.CENTER
         self.window.props.hide_titlebar_when_maximized = True
         self.window.connect('check-resize', self.on_main_window_resized)
         self.window.connect('delete-event', self.on_main_window_deleted)
         app.add_window(self.window)
 
-        # set drop action
-        targets = [
-            ['text/plain', Gtk.TargetFlags.OTHER_APP, 0],
-            ['*.*', Gtk.TargetFlags.OTHER_APP, 1]]
-        target_list =[Gtk.TargetEntry.new(*t) for t in targets]
-        self.window.drag_dest_set(
-            Gtk.DestDefaults.ALL, target_list, Gdk.DragAction.COPY)
-        self.window.connect(
-            'drag-data-received', self.on_main_window_drag_data_received)
+        self.window.drag_dest_set(Gtk.DestDefaults.ALL, DROP_TARGET_LIST,
+                                  Gdk.DragAction.COPY)
+        self.window.connect('drag-data-received',
+                            self.on_main_window_drag_data_received)
 
         app_menu = Gio.Menu.new()
         app_menu.append(_('Preferences'), 'app.preferences')
@@ -90,8 +91,8 @@ class App:
         app.set_app_menu(app_menu)
 
         preferences_action = Gio.SimpleAction.new('preferences', None)
-        preferences_action.connect(
-            'activate', self.on_preferences_action_activated)
+        preferences_action.connect('activate',
+                                   self.on_preferences_action_activated)
         app.add_action(preferences_action)
         signout_action = Gio.SimpleAction.new('signout', None)
         signout_action.connect('activate', self.on_signout_action_activated)
@@ -107,6 +108,7 @@ class App:
         self.window.add(paned)
 
         left_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+        left_box.get_style_context().add_class(Gtk.STYLE_CLASS_SIDEBAR)
         paned.add1(left_box)
         paned.child_set_property(left_box, 'shrink', False)
         paned.child_set_property(left_box, 'resize', False)
@@ -127,8 +129,8 @@ class App:
         icon_col.props.fixed_width = 40
         nav_treeview.append_column(icon_col)
         name_cell = Gtk.CellRendererText()
-        name_col = Gtk.TreeViewColumn(
-                'Places', name_cell, text=NAME_COL, foreground_rgba=COLOR_COL)
+        name_col = Gtk.TreeViewColumn('Places', name_cell, text=NAME_COL,
+                                      foreground_rgba=COLOR_COL)
         nav_treeview.append_column(name_col)
         nav_selection = nav_treeview.get_selection()
         nav_selection.connect('changed', self.on_nav_selection_changed)
@@ -139,14 +141,21 @@ class App:
         self.progressbar.set_text(_('Unknown'))
         left_box.pack_end(self.progressbar, False, False, 0)
 
+        self.img_avatar = Gtk.Image()
+        self.img_avatar.props.halign = Gtk.Align.CENTER
+        left_box.pack_end(self.img_avatar, False, False, 5)
+
+
         self.notebook = Gtk.Notebook()
         self.notebook.props.show_tabs = False
         paned.add2(self.notebook)
 
     def on_app_activate(self, app):
-        self.window.show_all()
         if not self.profile:
             self.show_signin_dialog()
+        self.window.show_all()
+        if hasattr(self, 'home_page'):
+            self.switch_page(self.home_page)
 
     def on_app_shutdown(self, app):
         '''Dump profile content to disk'''
@@ -191,10 +200,12 @@ class App:
                 preferences.destroy()
                 gutil.dump_profile(self.profile)
 
-            self.home_page.load()
+            for index, page in enumerate(self.notebook):
+                page.first_run = True
             self.switch_page(self.home_page)
-            return
-        self.quit()
+            self.update_avatar()
+        else:
+            self.quit()
 
     def on_main_window_resized(self, window):
         if self.profile:
@@ -209,10 +220,17 @@ class App:
 
     def on_main_window_drag_data_received(self, window, drag_context, x, y,
                                           data, info, time):
-        uris = data.get_text()
-        source_paths = util.uris_to_paths(uris)
-        if source_paths and self.profile:
-            self.upload_page.add_file_tasks(source_paths)
+        '''从其它程序拖放目录/文件, 以便上传.
+
+        这里, 会弹出一个选择目标文件夹的对话框
+        '''
+        if not self.profile:
+            return
+        if info == TargetInfo.URI_LIST:
+            uris = data.get_uris()
+            source_paths = util.uris_to_paths(uris)
+            if source_paths:
+                self.upload_page.upload_files(source_paths)
 
     def on_preferences_action_activated(self, action, params):
         if self.profile:
@@ -261,13 +279,24 @@ class App:
         self.progressbar.set_text(used_size + ' / ' + total_size)
         self.progressbar.set_fraction(used / total)
 
+    def update_avatar(self):
+        '''更新用户头像'''
+        def do_update_avatar(img_path, error=None):
+            if error or not img_path:
+                logger.error('Failed to get user avatar: %s, %s' %
+                             (img_path, error))
+            else:
+                self.img_avatar.set_from_file(img_path)
+        cache_path = Config.get_cache_path(self.profile['username'])
+        self.img_avatar.props.tooltip_text = self.profile['username']
+        gutil.async_call(gutil.update_avatar, self.cookie, cache_path,
+                         callback=do_update_avatar)
+
     def init_notebook(self):
         def append_page(page):
             self.notebook.append_page(page, Gtk.Label.new(page.disname))
-            self.nav_liststore.append([
-                page.icon_name, page.disname,
-                page.tooltip, self.default_color,
-                ])
+            self.nav_liststore.append([page.icon_name, page.disname,
+                                       page.tooltip, self.default_color])
 
         self.default_color = self.get_default_color()
         self.nav_liststore.clear()
@@ -315,19 +344,17 @@ class App:
         for index, p in enumerate(self.notebook):
             if p == page:
                 self.nav_selection.select_iter(self.nav_liststore[index].iter)
-                #self.notebook.set_current_page(index)
                 break
 
     def on_notebook_switched(self, notebook, page, index):
-        if page.first_run:
-            page.first_run = False
-            page.load()
+        page.check_first()
+        page.on_page_show()
 
     def on_nav_selection_changed(self, nav_selection):
-        model, iter_ = nav_selection.get_selected()
-        if not iter_:
+        model, tree_iter = nav_selection.get_selected()
+        if not tree_iter:
             return
-        path = model.get_path(iter_)
+        path = model.get_path(tree_iter)
         index = path.get_indices()[0]
         self.switch_page_by_index(index)
 
@@ -337,11 +364,10 @@ class App:
             self.status_icon = Gtk.StatusIcon()
             self.status_icon.set_from_icon_name(Config.NAME)
             # left click
-            self.status_icon.connect(
-                    'activate', self.on_status_icon_activate)
+            self.status_icon.connect('activate', self.on_status_icon_activate)
             # right click
-            self.status_icon.connect(
-                    'popup_menu', self.on_status_icon_popup_menu)
+            self.status_icon.connect('popup_menu',
+                                     self.on_status_icon_popup_menu)
         else:
             self.status_icon = None
 
@@ -351,8 +377,7 @@ class App:
         else:
             self.window.present()
 
-    def on_status_icon_popup_menu(self, status_icon, event_button,
-                                event_time):
+    def on_status_icon_popup_menu(self, status_icon, event_button, event_time):
         menu = Gtk.Menu()
         show_item = Gtk.MenuItem.new_with_label(_('Show App'))
         show_item.connect('activate', self.on_status_icon_show_app_activate)
@@ -363,14 +388,14 @@ class App:
 
         pause_upload_item = Gtk.MenuItem.new_with_label(
                 _('Pause Uploading Tasks'))
-        pause_upload_item.connect(
-                'activate', lambda *args: self.upload_page.pause_tasks())
+        pause_upload_item.connect('activate',
+                                  lambda *args: self.upload_page.pause_tasks())
         menu.append(pause_upload_item)
 
         pause_download_item = Gtk.MenuItem.new_with_label(
                 _('Pause Downloading Tasks'))
-        pause_download_item.connect(
-                'activate', lambda *args: self.download_page.pause_tasks())
+        pause_download_item.connect('activate',
+                lambda *args: self.download_page.pause_tasks())
         menu.append(pause_download_item)
 
         sep_item = Gtk.SeparatorMenuItem()
@@ -424,8 +449,8 @@ class App:
             status = Notify.init(Config.APPNAME)
             if not status:
                 return
-            self.notify = Notify.Notification.new(
-                    Config.APPNAME, '', Config.NAME)
+            self.notify = Notify.Notification.new(Config.APPNAME, '',
+                                                  Config.NAME)
 
     # Open API
     def toast(self, text):

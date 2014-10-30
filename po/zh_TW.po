@@ -7,16 +7,17 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-09-04 10:11+0800\n"
-"PO-Revision-Date: 2014-03-20 11:25+0800\n"
-"Last-Translator: LiuLang <gsushzhsosgsu@gmail.com>\n"
+"POT-Creation-Date: 2014-10-24 20:24+0800\n"
+"PO-Revision-Date: 2014-10-21 17:15+0800\n"
+"Last-Translator: CzBiX <gliuwr@gmail.com>\n"
 "Language-Team: Chinese (traditional)\n"
 "Language: zh_TW\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.5.4\n"
 
-#: ../bcloud/App.py:86 ../bcloud/PreferencesDialog.py:18
+#: ../bcloud/App.py:86 ../bcloud/PreferencesDialog.py:17
 msgid "Preferences"
 msgstr "首選項"
 
@@ -28,27 +29,27 @@ msgstr "註銷"
 msgid "About"
 msgstr "關於"
 
-#: ../bcloud/App.py:89 ../bcloud/App.py:379
+#: ../bcloud/App.py:89 ../bcloud/App.py:396
 msgid "Quit"
 msgstr "退出"
 
-#: ../bcloud/App.py:139
+#: ../bcloud/App.py:140
 msgid "Unknown"
 msgstr "未知"
 
-#: ../bcloud/App.py:357
+#: ../bcloud/App.py:374
 msgid "Show App"
 msgstr "顯示程序"
 
-#: ../bcloud/App.py:365
+#: ../bcloud/App.py:382
 msgid "Pause Uploading Tasks"
 msgstr "暫停所有上傳任務"
 
-#: ../bcloud/App.py:371
+#: ../bcloud/App.py:388
 msgid "Pause Downloading Tasks"
 msgstr "暫停所有下載任務"
 
-#: ../bcloud/App.py:419
+#: ../bcloud/App.py:436
 #, python-brace-format
 msgid "{0} copied to clipboard"
 msgstr "{0} 已被複製到剪貼板"
@@ -57,190 +58,222 @@ msgstr "{0} 已被複製到剪貼板"
 msgid "Select All"
 msgstr "全選"
 
-#: ../bcloud/BTBrowserDialog.py:65 ../bcloud/CloudPage.py:90
-#: ../bcloud/DownloadPage.py:126 ../bcloud/IconWindow.py:543
-#: ../bcloud/TrashPage.py:87 ../bcloud/UploadPage.py:116
+#: ../bcloud/BTBrowserDialog.py:64 ../bcloud/CloudPage.py:150
+#: ../bcloud/DownloadPage.py:197 ../bcloud/IconWindow.py:626
+#: ../bcloud/TrashPage.py:141 ../bcloud/UploadPage.py:179
 msgid "Name"
 msgstr "文件名"
 
-#: ../bcloud/BTBrowserDialog.py:70 ../bcloud/CloudPage.py:98
-#: ../bcloud/DownloadPage.py:141 ../bcloud/IconWindow.py:560
-#: ../bcloud/PropertiesDialog.py:56 ../bcloud/TrashPage.py:103
-#: ../bcloud/UploadPage.py:131
+#: ../bcloud/BTBrowserDialog.py:68 ../bcloud/CloudPage.py:157
+#: ../bcloud/DownloadPage.py:211 ../bcloud/IconWindow.py:642
+#: ../bcloud/PropertiesDialog.py:55 ../bcloud/TrashPage.py:156
+#: ../bcloud/UploadPage.py:193
 msgid "Size"
 msgstr "大小"
 
-#: ../bcloud/BTBrowserDialog.py:91
-msgid "Unknown error occured"
-msgstr "發生了未知錯誤"
+#: ../bcloud/BTBrowserDialog.py:94
+#, python-format
+msgid "Unknown error occured: %s"
+msgstr "發生了未知錯誤: %s"
 
-#: ../bcloud/CategoryPage.py:50 ../bcloud/CategoryPage.py:57
-#: ../bcloud/HomePage.py:112 ../bcloud/HomePage.py:120
-msgid "ListView"
-msgstr "列表"
-
-#: ../bcloud/CategoryPage.py:125 ../bcloud/CategoryPage.py:126
-msgid "Videos"
-msgstr "視頻"
-
-#: ../bcloud/CategoryPage.py:133 ../bcloud/CategoryPage.py:134
-msgid "Music"
-msgstr "音樂"
-
-#: ../bcloud/CategoryPage.py:141 ../bcloud/CategoryPage.py:142
-msgid "Pictures"
-msgstr "圖片"
-
-#: ../bcloud/CategoryPage.py:149 ../bcloud/CategoryPage.py:150
-msgid "Documents"
-msgstr "文檔"
-
-#: ../bcloud/CategoryPage.py:157 ../bcloud/CategoryPage.py:158
-msgid "Others"
-msgstr "其它"
-
-#: ../bcloud/CategoryPage.py:165
-msgid "BT"
-msgstr "BT"
-
-#: ../bcloud/CategoryPage.py:166
-msgid "BT seeds"
-msgstr "BT種子"
-
-#: ../bcloud/CloudPage.py:27 ../bcloud/DownloadPage.py:37
-#: ../bcloud/UploadPage.py:42
-msgid "FINISHED"
-msgstr "完成"
-
-#: ../bcloud/CloudPage.py:27 ../bcloud/DownloadPage.py:34
-msgid "DOWNLOADING"
-msgstr "正在下載"
-
-#: ../bcloud/CloudPage.py:33
-msgid "Cloud"
-msgstr "雲"
-
-#: ../bcloud/CloudPage.py:34 ../bcloud/IconWindow.py:193
-msgid "Cloud Download"
-msgstr "離線下載"
-
-#: ../bcloud/CloudPage.py:44
-msgid "New Link Task"
-msgstr "新建鏈接任務"
-
-#: ../bcloud/CloudPage.py:48 ../bcloud/FolderBrowserDialog.py:42
-#: ../bcloud/IconWindow.py:151 ../bcloud/TrashPage.py:46
+#: ../bcloud/CategoryPage.py:74 ../bcloud/CloudPage.py:94
+#: ../bcloud/CloudPage.py:109 ../bcloud/FolderBrowserDialog.py:41
+#: ../bcloud/HomePage.py:230 ../bcloud/IconWindow.py:213
+#: ../bcloud/TrashPage.py:84 ../bcloud/TrashPage.py:100
 msgid "Reload"
 msgstr "重新載入"
 
-#: ../bcloud/CloudPage.py:53 ../bcloud/DownloadPage.py:92
-#: ../bcloud/UploadPage.py:85
-msgid "Open Directory"
+#: ../bcloud/CategoryPage.py:140 ../bcloud/CategoryPage.py:142
+#: ../bcloud/CategoryPage.py:160 ../bcloud/CategoryPage.py:162
+#: ../bcloud/HomePage.py:358 ../bcloud/HomePage.py:360
+#: ../bcloud/HomePage.py:372 ../bcloud/HomePage.py:374
+#: ../bcloud/TrashPage.py:203 ../bcloud/TrashPage.py:205
+msgid "Network error"
+msgstr "網絡錯誤"
+
+#: ../bcloud/CategoryPage.py:207 ../bcloud/CategoryPage.py:209
+msgid "Videos"
+msgstr "視頻"
+
+#: ../bcloud/CategoryPage.py:216 ../bcloud/CategoryPage.py:218
+msgid "Music"
+msgstr "音樂"
+
+#: ../bcloud/CategoryPage.py:225 ../bcloud/CategoryPage.py:227
+msgid "Pictures"
+msgstr "圖片"
+
+#: ../bcloud/CategoryPage.py:234 ../bcloud/CategoryPage.py:236
+msgid "Documents"
+msgstr "文檔"
+
+#: ../bcloud/CategoryPage.py:243 ../bcloud/CategoryPage.py:245
+msgid "Others"
+msgstr "其它"
+
+#: ../bcloud/CategoryPage.py:252
+msgid "BT"
+msgstr "BT"
+
+#: ../bcloud/CategoryPage.py:254
+msgid "BT seeds"
+msgstr "BT種子"
+
+#: ../bcloud/CloudPage.py:28 ../bcloud/DownloadPage.py:37
+#: ../bcloud/UploadPage.py:35
+msgid "FINISHED"
+msgstr "完成"
+
+#: ../bcloud/CloudPage.py:28 ../bcloud/DownloadPage.py:34
+msgid "DOWNLOADING"
+msgstr "正在下載"
+
+#: ../bcloud/CloudPage.py:34
+msgid "Cloud"
+msgstr "雲"
+
+#: ../bcloud/CloudPage.py:36
+msgid "Cloud download"
+msgstr "離線下載"
+
+#: ../bcloud/CloudPage.py:54
+msgid "Create new cloud task"
+msgstr "新建離線下載"
+
+#: ../bcloud/CloudPage.py:63 ../bcloud/DownloadPage.py:114
+#: ../bcloud/UploadPage.py:90
+msgid "Open target directory"
 msgstr "打開所在目錄"
 
-#: ../bcloud/CloudPage.py:57
-msgid "Clear"
-msgstr "清空"
-
-#: ../bcloud/CloudPage.py:58
-msgid "Clear finished or canceled tasks"
-msgstr "清空已完成或已取消的任務"
-
-#: ../bcloud/CloudPage.py:62 ../bcloud/DownloadPage.py:98
-#: ../bcloud/UploadPage.py:91
-msgid "Remove"
-msgstr "刪除"
-
-#: ../bcloud/CloudPage.py:63
+#: ../bcloud/CloudPage.py:78 ../bcloud/DownloadPage.py:129
+#: ../bcloud/UploadPage.py:113
 msgid "Remove selected tasks"
 msgstr "刪除選中的的任務"
 
-#: ../bcloud/CloudPage.py:105 ../bcloud/DownloadPage.py:134
-#: ../bcloud/UploadPage.py:124
+#: ../bcloud/CloudPage.py:86 ../bcloud/CloudPage.py:119
+msgid "Remove completed cloud tasks"
+msgstr "刪除已完成的離線任務"
+
+#: ../bcloud/CloudPage.py:105
+msgid "New Link Task"
+msgstr "新建鏈接任務"
+
+#: ../bcloud/CloudPage.py:114 ../bcloud/DownloadPage.py:156
+#: ../bcloud/UploadPage.py:142
+msgid "Open Directory"
+msgstr "打開所在目錄"
+
+#: ../bcloud/CloudPage.py:118
+msgid "Clear"
+msgstr "清空"
+
+#: ../bcloud/CloudPage.py:123 ../bcloud/CloudPage.py:124
+#: ../bcloud/DownloadPage.py:168 ../bcloud/TrashPage.py:66
+#: ../bcloud/UploadPage.py:154
+msgid "Remove"
+msgstr "刪除"
+
+#: ../bcloud/CloudPage.py:163 ../bcloud/DownloadPage.py:204
+#: ../bcloud/UploadPage.py:186
 msgid "Progress"
 msgstr "進度"
 
-#: ../bcloud/CloudPage.py:219 ../bcloud/CloudPage.py:271
+#: ../bcloud/CloudPage.py:185
+msgid "Network error, info is empty"
+msgstr "網絡錯誤, info 爲空"
+
+#: ../bcloud/CloudPage.py:287 ../bcloud/CloudPage.py:342
 #, python-brace-format
 msgid "Error: {0}"
 msgstr "錯誤: {0}"
 
-#: ../bcloud/CloudPage.py:225 ../bcloud/CloudPage.py:323
+#: ../bcloud/CloudPage.py:292 ../bcloud/CloudPage.py:392
 #: ../bcloud/FolderBrowserDialog.py:22
 msgid "Save to.."
 msgstr "保存到.."
 
-#: ../bcloud/CloudPage.py:235
+#: ../bcloud/CloudPage.py:301
 msgid "Choose.."
 msgstr "選擇.."
 
-#: ../bcloud/CloudPage.py:254
-#, fuzzy
+#: ../bcloud/CloudPage.py:321
 msgid "Failed to parse download link"
-msgstr "掃描目錄出錯"
+msgstr "無法解析下載鏈接"
 
-#: ../bcloud/CloudPage.py:278
+#: ../bcloud/CloudPage.py:348
 msgid "Add new link tasks"
 msgstr "新建鏈接任務"
 
-#: ../bcloud/CloudPage.py:290
+#: ../bcloud/CloudPage.py:360
 msgid "Paste links here, line by line"
 msgstr "將下載鏈接貼到這裏, 每行一個"
 
-#: ../bcloud/CloudPage.py:298
+#: ../bcloud/CloudPage.py:368
 msgid "Support http/https/ftp/thunder/qqdl/flashget/eMule/Magnet format"
 msgstr "支持 HTTP/HTTPS/FTP/迅雷/旋風/快車/電驢/磁鏈 等格式"
 
-#: ../bcloud/Config.py:36
+#: ../bcloud/Config.py:41
 msgid "Baidu Pan client for GNU/Linux desktop users."
 msgstr "百度網盤的Linux客戶端"
 
-#: ../bcloud/DownloadPage.py:35 ../bcloud/UploadPage.py:40
+#: ../bcloud/DownloadPage.py:35 ../bcloud/UploadPage.py:33
 msgid "WAITING"
 msgstr "等待中"
 
-#: ../bcloud/DownloadPage.py:36 ../bcloud/UploadPage.py:41
+#: ../bcloud/DownloadPage.py:36 ../bcloud/UploadPage.py:34
 msgid "PAUSED"
 msgstr "已暫停"
 
-#: ../bcloud/DownloadPage.py:38 ../bcloud/UploadPage.py:43
+#: ../bcloud/DownloadPage.py:38 ../bcloud/UploadPage.py:36
 msgid "CANCELED"
 msgstr "已取消"
 
-#: ../bcloud/DownloadPage.py:39 ../bcloud/UploadPage.py:44
+#: ../bcloud/DownloadPage.py:39 ../bcloud/UploadPage.py:37
 msgid "ERROR"
 msgstr "錯誤"
 
-#: ../bcloud/DownloadPage.py:66
+#: ../bcloud/DownloadPage.py:66 ../bcloud/IconWindow.py:318
 msgid "Download"
 msgstr "下載"
 
-#: ../bcloud/DownloadPage.py:67
-msgid "Downloading tasks"
+#: ../bcloud/DownloadPage.py:68
+msgid "Downloading files"
 msgstr "正在下載的任務"
 
-#: ../bcloud/DownloadPage.py:84 ../bcloud/UploadPage.py:72
+#: ../bcloud/DownloadPage.py:97 ../bcloud/DownloadPage.py:148
+#: ../bcloud/UploadPage.py:73 ../bcloud/UploadPage.py:129
 msgid "Start"
 msgstr "開始"
 
-#: ../bcloud/DownloadPage.py:88 ../bcloud/UploadPage.py:76
+#: ../bcloud/DownloadPage.py:106 ../bcloud/DownloadPage.py:152
+#: ../bcloud/UploadPage.py:82 ../bcloud/UploadPage.py:133
 msgid "Pause"
 msgstr "暫停"
 
-#: ../bcloud/DownloadPage.py:148 ../bcloud/UploadPage.py:138
+#: ../bcloud/DownloadPage.py:137 ../bcloud/DownloadPage.py:163
+#: ../bcloud/UploadPage.py:121 ../bcloud/UploadPage.py:149
+msgid "Remove completed tasks"
+msgstr "刪除所有任務"
+
+#: ../bcloud/DownloadPage.py:217 ../bcloud/UploadPage.py:199
 msgid "State"
 msgstr "狀態"
 
-#: ../bcloud/DownloadPage.py:304
+#: ../bcloud/DownloadPage.py:379
 msgid "Failed to scan folder to download"
 msgstr "掃描目錄出錯"
 
-#: ../bcloud/DownloadPage.py:306
+#: ../bcloud/DownloadPage.py:381
 #, python-brace-format
 msgid "Please download {0} again"
 msgstr "請重新下載 {0}"
 
-#: ../bcloud/DownloadPage.py:340 ../bcloud/UploadPage.py:350
+#: ../bcloud/DownloadPage.py:403
+#, python-brace-format
+msgid "Task exists: {0}"
+msgstr "任務已存在: {0}"
+
+#: ../bcloud/DownloadPage.py:413 ../bcloud/UploadPage.py:418
 #, python-brace-format
 msgid ""
 "From {0}\n"
@@ -249,370 +282,454 @@ msgstr ""
 "從 {0}\n"
 "到{1}"
 
-#: ../bcloud/DownloadPage.py:393
-#, python-brace-format
-msgid "{0} kb/s"
-msgstr "{0} kb/s"
-
-#: ../bcloud/DownloadPage.py:421
+#: ../bcloud/DownloadPage.py:487
 #, python-brace-format
 msgid "{0} downloaded"
 msgstr "{0} 下載完成"
 
-#: ../bcloud/DownloadPage.py:445
+#: ../bcloud/DownloadPage.py:510
 #, python-brace-format
 msgid "Error occurs will downloading {0}"
 msgstr "在下載 {0} 時出錯"
 
-#: ../bcloud/DownloadPage.py:451
+#: ../bcloud/DownloadPage.py:516
 #, python-brace-format
 msgid "Disk Error: failed to read/write {0}"
 msgstr "磁盤錯誤: 無法讀取/寫入 {0}"
 
-#: ../bcloud/FolderBrowserDialog.py:38
+#: ../bcloud/FolderBrowserDialog.py:37
 msgid "Create Folder"
 msgstr "新建目錄"
 
-#: ../bcloud/FolderBrowserDialog.py:56
+#: ../bcloud/FolderBrowserDialog.py:55
 msgid "Folder"
 msgstr "目錄"
 
-#: ../bcloud/HomePage.py:49
+#: ../bcloud/HomePage.py:50
+msgid "Back"
+msgstr "後退"
+
+#: ../bcloud/HomePage.py:59
+msgid "Forward"
+msgstr "前進"
+
+#: ../bcloud/HomePage.py:160
 msgid "Home"
 msgstr "主頁"
 
-#: ../bcloud/HomePage.py:50
-msgid "Show all of your files on Cloud"
+#: ../bcloud/HomePage.py:162
+msgid "List all of your files"
 msgstr "顯示網盤中的所有文件"
 
-#: ../bcloud/HomePage.py:101
-msgid "Search"
-msgstr "搜索"
-
-#: ../bcloud/HomePage.py:104
+#: ../bcloud/HomePage.py:240 ../bcloud/HomePage.py:282
 msgid "Search documents and folders by name"
 msgstr "搜索文件名"
 
-#: ../bcloud/IconWindow.py:145 ../bcloud/NewFolderDialog.py:19
-#: ../bcloud/NewFolderDialog.py:32
+#: ../bcloud/IconWindow.py:161 ../bcloud/IconWindow.py:691
+msgid "Error: Move folder to itself!"
+msgstr "錯誤: 無法將文件夾移動到自身"
+
+#: ../bcloud/IconWindow.py:201 ../bcloud/NewFolderDialog.py:18
+#: ../bcloud/NewFolderDialog.py:31
 msgid "New Folder"
 msgstr "新建目錄"
 
-#: ../bcloud/IconWindow.py:157 ../bcloud/IconWindow.py:273
+#: ../bcloud/IconWindow.py:207
+msgid "Upload To This Folder"
+msgstr "上傳到這個目錄"
+
+#: ../bcloud/IconWindow.py:219 ../bcloud/IconWindow.py:345
 msgid "Properties"
 msgstr "屬性"
 
-#: ../bcloud/IconWindow.py:185
+#: ../bcloud/IconWindow.py:247
 msgid "Open"
 msgstr "打開"
 
-#: ../bcloud/IconWindow.py:203 ../bcloud/IconWindow.py:227
+#: ../bcloud/IconWindow.py:252
+msgid "Upload To.."
+msgstr "上傳到.."
+
+#: ../bcloud/IconWindow.py:260
+msgid "Cloud Download"
+msgstr "離線下載"
+
+#: ../bcloud/IconWindow.py:273 ../bcloud/IconWindow.py:300
 #, python-brace-format
 msgid "Open With {0}"
 msgstr "使用 {0} 打開"
 
-#: ../bcloud/IconWindow.py:208
+#: ../bcloud/IconWindow.py:277
 msgid "Open With"
 msgstr "打開方式"
 
-#: ../bcloud/IconWindow.py:220
+#: ../bcloud/IconWindow.py:289
 msgid "Other Application..."
 msgstr "其它程序..."
 
-#: ../bcloud/IconWindow.py:231
+#: ../bcloud/IconWindow.py:304
 msgid "Open With Other Application..."
 msgstr "使用其它程序打開..."
 
-#: ../bcloud/IconWindow.py:238
+#: ../bcloud/IconWindow.py:311
 msgid "Copy Link"
 msgstr "複製鏈接地址"
 
-#: ../bcloud/IconWindow.py:246
-msgid "Download..."
-msgstr "下載..."
+#: ../bcloud/IconWindow.py:321
+msgid "Share"
+msgstr "分享"
 
-#: ../bcloud/IconWindow.py:249
-msgid "Share..."
-msgstr "分享..."
-
-#: ../bcloud/IconWindow.py:255 ../bcloud/IconWindow.py:429
+#: ../bcloud/IconWindow.py:327 ../bcloud/IconWindow.py:512
 msgid "Move To..."
 msgstr "移動到..."
 
-#: ../bcloud/IconWindow.py:258 ../bcloud/IconWindow.py:455
+#: ../bcloud/IconWindow.py:330 ../bcloud/IconWindow.py:536
 msgid "Copy To..."
 msgstr "複製到..."
 
-#: ../bcloud/IconWindow.py:261
+#: ../bcloud/IconWindow.py:333
 msgid "Rename..."
 msgstr "重命名..."
 
-#: ../bcloud/IconWindow.py:267
+#: ../bcloud/IconWindow.py:339
 msgid "Move to Trash"
 msgstr "丟棄到回收站"
 
-#: ../bcloud/IconWindow.py:409
+#: ../bcloud/IconWindow.py:467
+msgid "Failed to copy link"
+msgstr "複製鏈接失敗"
+
+#: ../bcloud/IconWindow.py:493
 msgid "Failed to share selected files"
 msgstr "無法分享選中的文件"
 
-#: ../bcloud/IconWindow.py:568
+#: ../bcloud/IconWindow.py:649
 msgid "Modified"
 msgstr "修改時間:"
 
-#: ../bcloud/PreferencesDialog.py:36
+#: ../bcloud/PreferencesDialog.py:35
 msgid "General"
 msgstr "一般"
 
-#: ../bcloud/PreferencesDialog.py:38
+#: ../bcloud/PreferencesDialog.py:37
 msgid "Save To:"
 msgstr "保存到:"
 
-#: ../bcloud/PreferencesDialog.py:47
+#: ../bcloud/PreferencesDialog.py:46
 msgid "Upload hidden files:"
 msgstr "上傳隱藏文件:"
 
-#: ../bcloud/PreferencesDialog.py:53
+#: ../bcloud/PreferencesDialog.py:52
 msgid "Also upload hidden files and folders"
 msgstr "同時上傳隱藏文件文件和目錄"
 
-#: ../bcloud/PreferencesDialog.py:60
+#: ../bcloud/PreferencesDialog.py:58
 msgid "Use notification:"
 msgstr "使用消息通知:"
 
-#: ../bcloud/PreferencesDialog.py:70
+#: ../bcloud/PreferencesDialog.py:67
 msgid "Use dark theme:"
 msgstr "使用暗色主題:"
 
-#: ../bcloud/PreferencesDialog.py:80
-msgid "Minimize to system tray:"
-msgstr "最小化到系統托盤:"
+#: ../bcloud/PreferencesDialog.py:77
+msgid "Use Status Icon:"
+msgstr "使用狀態圖標:"
 
-#: ../bcloud/PreferencesDialog.py:90
-msgid "Use streaming mode:"
-msgstr "流媒體模式:"
-
-#: ../bcloud/PreferencesDialog.py:98
-msgid ""
-"When opening a video file, try to download a m3u8 playlist, instread of "
-"getting its file source link"
-msgstr ""
-"當打開視頻文件時, 試着下載一個m3u8播放列表文件, 而不是這個視頻文件的鏈接地址"
-
-#: ../bcloud/PreferencesDialog.py:107
+#: ../bcloud/PreferencesDialog.py:92
 msgid "Network"
 msgstr "網絡"
 
-#: ../bcloud/PreferencesDialog.py:109
+#: ../bcloud/PreferencesDialog.py:94
+msgid "Use streaming mode:"
+msgstr "流媒體模式:"
+
+#: ../bcloud/PreferencesDialog.py:102
+msgid ""
+"Open the compressed version of videos, useful for those whose network "
+"connection is slow."
+msgstr ""
+"播放壓縮後視頻(大概會壓到480P, 畫質可能會有損失).如果你的網速不理想, 這會很有"
+"用"
+
+#: ../bcloud/PreferencesDialog.py:105
 msgid "Concurrent downloads:"
 msgstr "同時下載:"
 
-#: ../bcloud/PreferencesDialog.py:118
+#: ../bcloud/PreferencesDialog.py:114
+msgid "Per task:"
+msgstr "每個下載任務:"
+
+#: ../bcloud/PreferencesDialog.py:122
+msgid "connections"
+msgstr "個連接"
+
+#: ../bcloud/PreferencesDialog.py:126
 msgid "Retries each:"
 msgstr "重連間隔:"
 
-#: ../bcloud/PreferencesDialog.py:124
+#: ../bcloud/PreferencesDialog.py:133
 msgid "0: disable retries"
 msgstr "0: 禁止重新連接"
 
-#: ../bcloud/PreferencesDialog.py:126
+#: ../bcloud/PreferencesDialog.py:135
 msgid "minutes"
 msgstr "分鐘"
 
-#: ../bcloud/PreferencesDialog.py:130
+#: ../bcloud/PreferencesDialog.py:139
 msgid "Download timeout:"
 msgstr "下載超時:"
 
-#: ../bcloud/PreferencesDialog.py:139
+#: ../bcloud/PreferencesDialog.py:148
 msgid "seconds"
 msgstr "秒"
 
-#: ../bcloud/PropertiesDialog.py:27 ../bcloud/PropertiesDialog.py:99
+#: ../bcloud/PreferencesDialog.py:152
+msgid "File exists while downloading:"
+msgstr "下載時如果文件已存在:"
+
+#: ../bcloud/PreferencesDialog.py:156 ../bcloud/PreferencesDialog.py:169
+msgid "Do Nothing"
+msgstr "什麼都不做"
+
+#: ../bcloud/PreferencesDialog.py:157 ../bcloud/PreferencesDialog.py:170
+msgid "Overwrite"
+msgstr "覆蓋"
+
+#: ../bcloud/PreferencesDialog.py:158 ../bcloud/PreferencesDialog.py:171
+msgid "Rename Automatically"
+msgstr "自動重命名"
+
+#: ../bcloud/PreferencesDialog.py:162
+msgid "What to do when downloading a file which already exists on local disk"
+msgstr "當下載一個文件時, 本地有相同名稱的文件存在"
+
+#: ../bcloud/PreferencesDialog.py:165
+msgid "File exists while uploading:"
+msgstr "上傳時如果文件已存在:"
+
+#: ../bcloud/PreferencesDialog.py:174
+msgid "What to do when uploading a file which already exists on server"
+msgstr "當上傳一個文件到服務器時, 服務器上已經有同名文件存在"
+
+#: ../bcloud/PropertiesDialog.py:26 ../bcloud/PropertiesDialog.py:95
 msgid " Properties"
 msgstr " 的屬性"
 
-#: ../bcloud/PropertiesDialog.py:43 ../bcloud/PropertiesDialog.py:112
+#: ../bcloud/PropertiesDialog.py:42 ../bcloud/PropertiesDialog.py:108
 msgid "Name:"
 msgstr "文件名:"
 
-#: ../bcloud/PropertiesDialog.py:48 ../bcloud/PropertiesDialog.py:117
+#: ../bcloud/PropertiesDialog.py:47 ../bcloud/PropertiesDialog.py:113
 msgid "Location:"
 msgstr "位置:"
 
-#: ../bcloud/PropertiesDialog.py:61 ../bcloud/PropertiesDialog.py:63
+#: ../bcloud/PropertiesDialog.py:60 ../bcloud/PropertiesDialog.py:62
 msgid " bytes"
 msgstr " 字節"
 
-#: ../bcloud/PropertiesDialog.py:76
+#: ../bcloud/PropertiesDialog.py:75
 msgid "Created:"
 msgstr "創建:"
 
-#: ../bcloud/PropertiesDialog.py:82
+#: ../bcloud/PropertiesDialog.py:80
 msgid "Modified:"
 msgstr "修改:"
 
-#: ../bcloud/PropertiesDialog.py:129
+#: ../bcloud/PropertiesDialog.py:125
 #, python-brace-format
 msgid "{0} folders, {1} files"
 msgstr "{0} 個目錄, {1} 個文件"
 
-#: ../bcloud/PropertiesDialog.py:130
+#: ../bcloud/PropertiesDialog.py:126
 msgid "Contents:"
 msgstr "內容:"
 
-#: ../bcloud/RenameDialog.py:19
+#: ../bcloud/RenameDialog.py:18
 msgid "Rename files"
 msgstr "重命名文件"
 
-#: ../bcloud/RenameDialog.py:39
+#: ../bcloud/RenameDialog.py:38
 msgid "Old Name:"
 msgstr "舊名稱"
 
-#: ../bcloud/RenameDialog.py:40
+#: ../bcloud/RenameDialog.py:39
 msgid "New Name:"
 msgstr "新名稱"
 
-#: ../bcloud/SigninDialog.py:25 ../bcloud/VCodeDialog.py:20
+#: ../bcloud/SigninDialog.py:26 ../bcloud/VCodeDialog.py:20
 msgid "Verification.."
 msgstr "請驗證.."
 
-#: ../bcloud/SigninDialog.py:79
+#: ../bcloud/SigninDialog.py:124
 msgid "Sign in now"
 msgstr "現在登錄"
 
-#: ../bcloud/SigninDialog.py:98
+#: ../bcloud/SigninDialog.py:143
 msgid "Username/Email/Phone..."
 msgstr "用戶名/Email/手機號..."
 
-#: ../bcloud/SigninDialog.py:103
+#: ../bcloud/SigninDialog.py:148
 msgid "Password .."
 msgstr "密碼 .."
 
-#: ../bcloud/SigninDialog.py:109
+#: ../bcloud/SigninDialog.py:154
 msgid "Remember Password"
 msgstr "記住密碼"
 
-#: ../bcloud/SigninDialog.py:116
+#: ../bcloud/SigninDialog.py:161
 msgid "Signin Automatically"
 msgstr "自動登錄"
 
-#: ../bcloud/SigninDialog.py:122 ../bcloud/SigninDialog.py:188
+#: ../bcloud/SigninDialog.py:167 ../bcloud/SigninDialog.py:236
 msgid "Sign in"
 msgstr "登錄"
 
-#: ../bcloud/SigninDialog.py:132
+#: ../bcloud/SigninDialog.py:177
 msgid "Failed to sign in, please try again."
 msgstr "登錄失敗, 請重試"
 
-#: ../bcloud/SigninDialog.py:213
+#: ../bcloud/SigninDialog.py:261
 msgid "In process..."
 msgstr "正在處理..."
 
-#: ../bcloud/SigninDialog.py:223
-msgid "Error: Failed to get bdstokens!"
+#: ../bcloud/SigninDialog.py:270
+msgid "Failed to get bdstoken!"
 msgstr "獲取bdstoken 失敗!"
 
-#: ../bcloud/SigninDialog.py:234
-msgid "Failed to signin, please try again."
+#: ../bcloud/SigninDialog.py:282
+msgid "Login failed, please try again"
 msgstr "登錄失敗, 請重試"
 
-#: ../bcloud/SigninDialog.py:237
+#: ../bcloud/SigninDialog.py:298 ../bcloud/SigninDialog.py:362
+msgid "Please input verification code!"
+msgstr "請輸入驗證碼!"
+
+#: ../bcloud/SigninDialog.py:301 ../bcloud/SigninDialog.py:317
 msgid "Get bdstoken..."
 msgstr "獲取bdstoken..."
 
-#: ../bcloud/SigninDialog.py:245 ../bcloud/SigninDialog.py:250
-msgid "Failed to get WAP page, please try again."
-msgstr "無法獲取主頁, 請重試"
+#: ../bcloud/SigninDialog.py:310
+msgid "Password error, please try again"
+msgstr "密碼錯誤, 請重試"
 
-#: ../bcloud/SigninDialog.py:264
-msgid "Signin..."
-msgstr "登錄認證..."
+#: ../bcloud/SigninDialog.py:314
+msgid "Verfication code error, please try again"
+msgstr "驗證碼錯誤, 請重試"
 
-#: ../bcloud/SigninDialog.py:272
-msgid "Failed to get tokens, please try again."
+#: ../bcloud/SigninDialog.py:323
+msgid "Unknown error, please try again"
+msgstr "未知錯誤, 請重試"
+
+#: ../bcloud/SigninDialog.py:330
+msgid "Failed to request public key, please try again"
+msgstr "獲取公鑰失敗, 請重試"
+
+#: ../bcloud/SigninDialog.py:345
+msgid "Failed to check login, please try again"
+msgstr "檢測登錄歷史失敗, 請重試"
+
+#: ../bcloud/SigninDialog.py:377
+msgid "Failed to get UBI, please try again."
+msgstr "獲取UBI失敗, 請重試"
+
+#: ../bcloud/SigninDialog.py:380
+msgid "Check login"
+msgstr "檢測登錄歷史"
+
+#: ../bcloud/SigninDialog.py:388
+msgid "Failed to get token, please try again."
 msgstr "獲取token失敗, 請重試"
 
-#: ../bcloud/SigninDialog.py:276
-msgid "Get WAP page..."
-msgstr "獲取WAP頁面..."
+#: ../bcloud/SigninDialog.py:394
+msgid "Get UBI..."
+msgstr "獲取UBI..."
 
-#: ../bcloud/SigninDialog.py:284
+#: ../bcloud/SigninDialog.py:403
 msgid "Failed to get BAIDUID cookie, please try agin."
 msgstr "獲取BAIDUID cookie失敗, 請重試"
 
-#: ../bcloud/SigninDialog.py:287
+#: ../bcloud/SigninDialog.py:406
 msgid "Get TOKEN..."
 msgstr "獲取 TOKEN..."
 
-#: ../bcloud/SigninDialog.py:304
+#: ../bcloud/SigninDialog.py:425
 msgid "Get BAIDUID..."
 msgstr "獲取BAIDUID..."
 
-#: ../bcloud/TrashPage.py:27
+#: ../bcloud/TrashPage.py:29
 msgid "Trash"
 msgstr "回收站"
 
-#: ../bcloud/TrashPage.py:28
-msgid "Files deleted."
-msgstr "已刪除的文件"
+#: ../bcloud/TrashPage.py:31
+msgid "Files deleted"
+msgstr "已刪除的文件."
 
-#: ../bcloud/TrashPage.py:42
+#: ../bcloud/TrashPage.py:51 ../bcloud/TrashPage.py:96
 msgid "Restore"
 msgstr "恢復"
 
-#: ../bcloud/TrashPage.py:50
+#: ../bcloud/TrashPage.py:68
+msgid "Delete selected files in trash permanently"
+msgstr "永久刪除選中的文件"
+
+#: ../bcloud/TrashPage.py:76 ../bcloud/TrashPage.py:105
+msgid "Clear trash"
+msgstr "清空回收站"
+
+#: ../bcloud/TrashPage.py:104
 msgid "Clear Trash"
 msgstr "清空回收站"
 
-#: ../bcloud/TrashPage.py:51
-msgid "Will delete all files in trash"
-msgstr "永久刪除所有文件"
-
-#: ../bcloud/TrashPage.py:55
+#: ../bcloud/TrashPage.py:109
 msgid "Delete"
 msgstr "刪除"
 
-#: ../bcloud/TrashPage.py:56
+#: ../bcloud/TrashPage.py:111
 msgid "Delete selected files permanently"
 msgstr "永久刪除選中的文件"
 
-#: ../bcloud/TrashPage.py:109
+#: ../bcloud/TrashPage.py:161
 msgid "Time"
 msgstr "時間"
 
-#: ../bcloud/TrashPage.py:115
+#: ../bcloud/TrashPage.py:166
 msgid "Remaining"
 msgstr "剩餘時間"
 
-#: ../bcloud/UploadPage.py:39
+#: ../bcloud/UploadPage.py:32
 msgid "UPLOADING"
 msgstr "正在上傳"
 
-#: ../bcloud/UploadPage.py:53
+#: ../bcloud/UploadPage.py:46
 msgid "Upload"
 msgstr "上傳"
 
-#: ../bcloud/UploadPage.py:54
-msgid "Uploading tasks"
-msgstr "上傳任務"
+#: ../bcloud/UploadPage.py:48
+msgid "Uploading files"
+msgstr "上傳文件"
 
-#: ../bcloud/UploadPage.py:80
+#: ../bcloud/UploadPage.py:99 ../bcloud/UploadPage.py:137
 msgid "Upload files"
 msgstr "上傳文件"
 
-#: ../bcloud/UploadPage.py:81
+#: ../bcloud/UploadPage.py:138
 msgid "Upload files and folders"
 msgstr "上傳文件/目錄"
 
-#: ../bcloud/UploadPage.py:288
+#: ../bcloud/UploadPage.py:360
 msgid "Choose a file.."
 msgstr "選擇文件.."
 
-#: ../bcloud/UploadPage.py:359
+#: ../bcloud/UploadPage.py:426
 #, python-brace-format
 msgid "{0} is too large to upload (>10G)."
 msgstr "{0} 太大, 無法上傳(>10G)"
 
-#: ../bcloud/UploadPage.py:494
+#: ../bcloud/UploadPage.py:524
+msgid "Failed to upload, please try again"
+msgstr "上傳失敗, 請重試"
+
+#: ../bcloud/UploadPage.py:563
 #, python-brace-format
 msgid "{0} uploaded"
 msgstr "{0} 已上傳"

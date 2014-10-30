@@ -15,9 +15,13 @@ from gi.repository import Pango
 
 from bcloud import Config
 _ = Config._
+from bcloud.const import UploadState as State
+from bcloud.const import ValidatePathState
+from bcloud.const import ValidatePathStateText
 from bcloud.FolderBrowserDialog import FolderBrowserDialog
 from bcloud.Uploader import Uploader
 from bcloud import gutil
+from bcloud.log import logger
 from bcloud import pcs
 from bcloud import util
 
@@ -26,15 +30,6 @@ from bcloud import util
     PERCENT_COL, TOOLTIP_COL, THRESHOLD_COL) = list(range(12))
 TASK_FILE = 'upload.sqlite'
 
-class State:
-    '''下载状态常量'''
-    UPLOADING = 0
-    WAITING = 1
-    PAUSED = 2
-    FINISHED = 3
-    CANCELED = 4
-    ERROR = 5
-
 StateNames = [
     _('UPLOADING'),
     _('WAITING'),
@@ -42,16 +37,17 @@ StateNames = [
     _('FINISHED'),
     _('CANCELED'),
     _('ERROR'),
-    ]
+]
 
 RUNNING_STATES = (State.FINISHED, State.UPLOADING, State.WAITING)
 
 
 class UploadPage(Gtk.Box):
 
-    icon_name = 'upload-symbolic'
+    icon_name = 'folder-upload-symbolic'
     disname = _('Upload')
-    tooltip = _('Uploading tasks')
+    name = 'UploadPage'
+    tooltip = _('Uploading files')
     first_run = True
     workers = {}  # {`fid`: (worker, row)}
     commit_count = 0
@@ -59,38 +55,131 @@ class UploadPage(Gtk.Box):
     def __init__(self, app):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self.app = app
+        if Config.GTK_GE_312:
+            self.headerbar = Gtk.HeaderBar()
+            self.headerbar.props.show_close_button = True
+            self.headerbar.props.has_subtitle = False
+            self.headerbar.set_title(self.disname)
 
-    def check_first(self):
-        if self.first_run:
-            self.first_run = False
-            self.load()
+            control_box = Gtk.Box()
+            control_box_context = control_box.get_style_context()
+            control_box_context.add_class(Gtk.STYLE_CLASS_RAISED)
+            control_box_context.add_class(Gtk.STYLE_CLASS_LINKED)
+            self.headerbar.pack_start(control_box)
 
-    def load(self):
-        control_box = Gtk.Box()
-        self.pack_start(control_box, False, False, 0)
+            start_button = Gtk.Button()
+            start_img = Gtk.Image.new_from_icon_name(
+                    'media-playback-start-symbolic',
+                    Gtk.IconSize.SMALL_TOOLBAR)
+            start_button.set_image(start_img)
+            start_button.set_tooltip_text(_('Start'))
+            start_button.connect('clicked', self.on_start_button_clicked)
+            control_box.pack_start(start_button, False, False, 0)
 
-        start_button = Gtk.Button.new_with_label(_('Start'))
-        start_button.connect('clicked', self.on_start_button_clicked)
-        control_box.pack_start(start_button, False, False, 0)
+            pause_button = Gtk.Button()
+            pause_img = Gtk.Image.new_from_icon_name(
+                    'media-playback-pause-symbolic',
+                    Gtk.IconSize.SMALL_TOOLBAR)
+            pause_button.set_image(pause_img)
+            pause_button.set_tooltip_text(_('Pause'))
+            pause_button.connect('clicked', self.on_pause_button_clicked)
+            control_box.pack_start(pause_button, False, False, 0)
 
-        pause_button = Gtk.Button.new_with_label(_('Pause'))
-        pause_button.connect('clicked', self.on_pause_button_clicked)
-        control_box.pack_start(pause_button, False, False, 0)
+            open_folder_button = Gtk.Button()
+            open_folder_img = Gtk.Image.new_from_icon_name(
+                    'document-open-symbolic', Gtk.IconSize.SMALL_TOOLBAR)
+            open_folder_button.set_image(open_folder_img)
+            open_folder_button.set_tooltip_text(_('Open target directory'))
+            open_folder_button.connect('clicked',
+                                       self.on_open_folder_button_clicked)
+            self.headerbar.pack_start(open_folder_button)
 
-        upload_button = Gtk.Button.new_with_label(_('Upload files'))
-        upload_button.set_tooltip_text(_('Upload files and folders'))
-        upload_button.connect('clicked', self.on_upload_button_clicked)
-        control_box.pack_start(upload_button, False, False, 0)
+            upload_box = Gtk.Box()
+            upload_box_context = upload_box.get_style_context()
+            upload_box_context.add_class(Gtk.STYLE_CLASS_RAISED)
+            upload_box_context.add_class(Gtk.STYLE_CLASS_LINKED)
+            self.headerbar.pack_start(upload_box)
 
-        open_folder_button = Gtk.Button.new_with_label(_('Open Directory'))
-        open_folder_button.connect(
-                'clicked', self.on_open_folder_button_clicked)
-        open_folder_button.props.margin_left = 40
-        control_box.pack_start(open_folder_button, False, False, 0)
+            upload_file_button = Gtk.Button()
+            upload_file_img = Gtk.Image.new_from_icon_name(
+                    'folder-upload-symbolic', Gtk.IconSize.SMALL_TOOLBAR)
+            upload_file_button.set_image(upload_file_img)
+            upload_file_button.set_tooltip_text(_('Upload files'))
+            upload_file_button.connect('clicked',
+                                       self.on_upload_file_button_clicked)
+            upload_box.pack_start(upload_file_button, False, False, 0)
 
-        remove_button = Gtk.Button.new_with_label(_('Remove'))
-        remove_button.connect('clicked', self.on_remove_button_clicked)
-        control_box.pack_end(remove_button, False, False, 0)
+            upload_folder_button = Gtk.Button()
+            upload_folder_img = Gtk.Image.new_from_icon_name(
+                    'folder-upload-symbolic', Gtk.IconSize.SMALL_TOOLBAR)
+            upload_folder_button.set_image(upload_folder_img)
+            upload_folder_button.set_tooltip_text(_('Upload folders'))
+            upload_folder_button.connect('clicked',
+                                         self.on_upload_folder_button_clicked)
+            upload_box.pack_start(upload_folder_button, False, False, 0)
+
+            right_box = Gtk.Box()
+            right_box_context = right_box.get_style_context()
+            right_box_context.add_class(Gtk.STYLE_CLASS_RAISED)
+            right_box_context.add_class(Gtk.STYLE_CLASS_LINKED)
+            self.headerbar.pack_end(right_box)
+
+            remove_button = Gtk.Button()
+            remove_img = Gtk.Image.new_from_icon_name('list-remove-symbolic',
+                    Gtk.IconSize.SMALL_TOOLBAR)
+            remove_button.set_image(remove_img)
+            remove_button.set_tooltip_text(_('Remove selected tasks'))
+            remove_button.connect('clicked', self.on_remove_button_clicked)
+            right_box.pack_start(remove_button, False, False, 0)
+
+            remove_finished_button = Gtk.Button()
+            remove_finished_img = Gtk.Image.new_from_icon_name(
+                    'list-remove-all-symbolic', Gtk.IconSize.SMALL_TOOLBAR)
+            remove_finished_button.set_image(remove_finished_img)
+            remove_finished_button.set_tooltip_text(_('Remove completed tasks'))
+            remove_finished_button.connect('clicked',
+                    self.on_remove_finished_button_clicked)
+            right_box.pack_start(remove_finished_button, False, False, 0)
+        else:
+            control_box = Gtk.Box()
+            self.pack_start(control_box, False, False, 0)
+
+            start_button = Gtk.Button.new_with_label(_('Start'))
+            start_button.connect('clicked', self.on_start_button_clicked)
+            control_box.pack_start(start_button, False, False, 0)
+
+            pause_button = Gtk.Button.new_with_label(_('Pause'))
+            pause_button.connect('clicked', self.on_pause_button_clicked)
+            control_box.pack_start(pause_button, False, False, 0)
+
+            upload_file_button = Gtk.Button.new_with_label(_('Upload Files'))
+            upload_file_button.set_tooltip_text(_('Upload files'))
+            upload_file_button.connect('clicked',
+                                       self.on_upload_file_button_clicked)
+            control_box.pack_start(upload_file_button, False, False, 0)
+
+            upload_folder_button = Gtk.Button.new_with_label(
+                    _('Upload Folders'))
+            upload_folder_button.set_tooltip_text(_('Upload folders'))
+            upload_folder_button.connect('clicked',
+                                         self.on_upload_folder_button_clicked)
+            control_box.pack_start(upload_folder_button, False, False, 0)
+
+            open_folder_button = Gtk.Button.new_with_label(_('Open Directory'))
+            open_folder_button.connect('clicked',
+                                       self.on_open_folder_button_clicked)
+            open_folder_button.props.margin_left = 40
+            control_box.pack_start(open_folder_button, False, False, 0)
+
+            remove_finished_button = Gtk.Button.new_with_label(
+                    _('Remove completed tasks'))
+            remove_finished_button.connect('clicked',
+                    self.on_remove_finished_button_clicked)
+            control_box.pack_end(remove_finished_button, False, False, 0)
+
+            remove_button = Gtk.Button.new_with_label(_('Remove'))
+            remove_button.connect('clicked', self.on_remove_button_clicked)
+            control_box.pack_end(remove_button, False, False, 0)
 
         scrolled_win = Gtk.ScrolledWindow()
         self.pack_start(scrolled_win, True, True, 0)
@@ -98,10 +187,10 @@ class UploadPage(Gtk.Box):
         # fid, source_name, source_path, path, size,
         # currsize, state, statename, humansize, percent, tooltip
         # slice size
-        self.liststore = Gtk.ListStore(
-            GObject.TYPE_INT, str, str, str, GObject.TYPE_INT64,
-            GObject.TYPE_INT64, int, str, str, GObject.TYPE_INT, str,
-            GObject.TYPE_INT64)
+        self.liststore = Gtk.ListStore(GObject.TYPE_INT, str, str, str,
+                                       GObject.TYPE_INT64, GObject.TYPE_INT64,
+                                       int, str, str, GObject.TYPE_INT, str,
+                                       GObject.TYPE_INT64)
         self.treeview = Gtk.TreeView(model=self.liststore)
         self.treeview.set_headers_clickable(True)
         self.treeview.set_reorderable(True)
@@ -111,8 +200,8 @@ class UploadPage(Gtk.Box):
         self.selection.set_mode(Gtk.SelectionMode.MULTIPLE)
         scrolled_win.add(self.treeview)
 
-        name_cell = Gtk.CellRendererText(
-                ellipsize=Pango.EllipsizeMode.END, ellipsize_set=True)
+        name_cell = Gtk.CellRendererText(ellipsize=Pango.EllipsizeMode.END,
+                                         ellipsize_set=True)
         name_col = Gtk.TreeViewColumn(_('Name'), name_cell, text=NAME_COL)
         name_col.set_expand(True)
         self.treeview.append_column(name_col)
@@ -120,33 +209,43 @@ class UploadPage(Gtk.Box):
         self.liststore.set_sort_func(NAME_COL, gutil.tree_model_natsort)
 
         percent_cell = Gtk.CellRendererProgress()
-        percent_col = Gtk.TreeViewColumn(
-                _('Progress'), percent_cell, value=PERCENT_COL)
+        percent_col = Gtk.TreeViewColumn(_('Progress'), percent_cell,
+                                         value=PERCENT_COL)
         self.treeview.append_column(percent_col)
         percent_col.props.min_width = 145
         percent_col.set_sort_column_id(PERCENT_COL)
 
         size_cell = Gtk.CellRendererText()
-        size_col = Gtk.TreeViewColumn(
-                _('Size'), size_cell, text=HUMANSIZE_COL)
+        size_col = Gtk.TreeViewColumn(_('Size'), size_cell, text=HUMANSIZE_COL)
         self.treeview.append_column(size_col)
         size_col.props.min_width = 100
         size_col.set_sort_column_id(SIZE_COL)
 
         state_cell = Gtk.CellRendererText()
-        state_col = Gtk.TreeViewColumn(
-                _('State'), state_cell, text=STATENAME_COL)
+        state_col = Gtk.TreeViewColumn(_('State'), state_cell,
+                                       text=STATENAME_COL)
         self.treeview.append_column(state_col)
         state_col.props.min_width = 100
         state_col.set_sort_column_id(PERCENT_COL)
 
+    def check_first(self):
+        if self.first_run:
+            self.first_run = False
+            self.load()
+
+    def on_page_show(self):
+        if Config.GTK_GE_312:
+            self.app.window.set_titlebar(self.headerbar)
+            self.headerbar.show_all()
+
+    def load(self):
         self.show_all()
         self.init_db()
         self.load_tasks_from_db()
 
     def init_db(self):
-        cache_path = os.path.join(
-                Config.CACHE_DIR, self.app.profile['username'])
+        cache_path = os.path.join(Config.CACHE_DIR,
+                                  self.app.profile['username'])
         if not os.path.exists(cache_path):
             os.makedirs(cache_path, exist_ok=True)
         db = os.path.join(cache_path, TASK_FILE)
@@ -176,23 +275,6 @@ class UploadPage(Gtk.Box):
         '''
         self.cursor.execute(sql)
 
-        # mig 3.2.1 -> 3.3.1
-        try:
-            req = self.cursor.execute('SELECT * FROM tasks')
-            tasks = []
-            threshold = 2 ** 20
-            for row in req:
-                tasks.append(row + ('', threshold))
-            if tasks:
-                sql = '''INSERT INTO upload
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
-                self.cursor.executemany(sql, tasks)
-                self.check_commit()
-            self.cursor.execute('DROP TABLE tasks')
-            self.check_commit()
-        except sqlite3.OperationalError:
-            pass
-
     def reload(self):
         pass
 
@@ -202,10 +284,10 @@ class UploadPage(Gtk.Box):
         for task in req:
             self.liststore.append(task)
 
-    def check_commit(self):
+    def check_commit(self, force=False):
         '''当修改数据库超过50次后, 就自动commit数据.'''
         self.commit_count = self.commit_count + 1
-        if self.commit_count >= 50:
+        if force or self.commit_count >= 50:
             self.commit_count = 0
             self.conn.commit()
 
@@ -216,7 +298,7 @@ class UploadPage(Gtk.Box):
         human_size, percent, tooltip, threshold)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
         req = self.cursor.execute(sql, task)
-        self.check_commit()
+        self.check_commit(force=True)
         return req.lastrowid
 
     def add_slice_db(self, fid, slice_end, md5):
@@ -250,7 +332,7 @@ class UploadPage(Gtk.Box):
         else:
             return None
 
-    def update_task_db(self, row):
+    def update_task_db(self, row, force=False):
         '''更新数据库中的任务信息'''
         sql = '''UPDATE upload SET 
         curr_size=?, state=?, state_name=?, human_size=?, percent=?
@@ -259,15 +341,15 @@ class UploadPage(Gtk.Box):
         self.cursor.execute(sql, [
             row[CURRSIZE_COL], row[STATE_COL], row[STATENAME_COL],
             row[HUMANSIZE_COL], row[PERCENT_COL], row[FID_COL]
-            ])
-        self.check_commit()
+        ])
+        self.check_commit(force=force)
 
     def remove_task_db(self, fid):
         '''将任务从数据库中删除'''
         self.remove_slice_db(fid)
         sql = 'DELETE FROM upload WHERE fid=?'
         self.cursor.execute(sql, [fid, ])
-        self.check_commit()
+        self.check_commit(force=True)
 
     def remove_slice_db(self, fid):
         '''将上传任务的分片从数据库中删除'''
@@ -283,12 +365,13 @@ class UploadPage(Gtk.Box):
             self.conn.commit()
             self.conn.close()
 
-    def add_task(self):
-        file_dialog = Gtk.FileChooserDialog(
-            _('Choose a file..'), self.app.window,
-            Gtk.FileChooserAction.OPEN,
-            (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-            Gtk.STOCK_OK, Gtk.ResponseType.OK))
+    # Open API
+    def add_file_task(self, dir_name=None):
+        '''添加上传任务, 会弹出一个选择文件的对话框'''
+        file_dialog = Gtk.FileChooserDialog(_('Choose Files..'),
+                self.app.window, Gtk.FileChooserAction.OPEN,
+                (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                 Gtk.STOCK_OK, Gtk.ResponseType.OK))
         file_dialog.set_modal(True)
         file_dialog.set_select_multiple(True)
         file_dialog.set_default_response(Gtk.ResponseType.OK)
@@ -299,11 +382,30 @@ class UploadPage(Gtk.Box):
         source_paths = file_dialog.get_filenames()
         file_dialog.destroy()
         if source_paths:
-            self.add_file_tasks(source_paths)
+            self.upload_files(source_paths, dir_name)
+
+    def add_folder_task(self, dir_name=None):
+        '''添加上传任务, 会弹出一个选择文件夹的对话框'''
+        folder_dialog = Gtk.FileChooserDialog(_('Choose Folders..'),
+                self.app.window, Gtk.FileChooserAction.SELECT_FOLDER,
+                (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                 Gtk.STOCK_OK, Gtk.ResponseType.OK))
+        folder_dialog.set_modal(True)
+        folder_dialog.set_select_multiple(True)
+        folder_dialog.set_default_response(Gtk.ResponseType.OK)
+        folder_dialog.set_current_folder(Config.HOME_DIR)
+        response = folder_dialog.run()
+        if response != Gtk.ResponseType.OK:
+            folder_dialog.destroy()
+            return
+        source_paths = folder_dialog.get_filenames()
+        folder_dialog.destroy()
+        if source_paths:
+            self.upload_files(source_paths, dir_name)
 
     # Open API
-    def add_file_tasks(self, source_paths, dir_name=None):
-        '''批量创建上传任务
+    def upload_files(self, source_paths, dir_name=None):
+        '''批量创建上传任务, 会扫描子目录并依次上传.
 
         source_path - 本地文件的绝对路径
         dir_name    - 文件在服务器上的父目录, 如果为None的话, 会弹出一个
@@ -312,8 +414,7 @@ class UploadPage(Gtk.Box):
         def scan_folders(folder_path):
             file_list = os.listdir(folder_path)
             source_paths = [os.path.join(folder_path, f) for f in file_list]
-            self.add_file_tasks(
-                    source_paths,
+            self.upload_files(source_paths,
                     os.path.join(dir_name, os.path.split(folder_path)[1]))
 
         self.check_first()
@@ -325,29 +426,64 @@ class UploadPage(Gtk.Box):
                 return
             dir_name = folder_dialog.get_path()
             folder_dialog.destroy()
+        invalid_paths = []
         for source_path in source_paths:
+            if util.validate_pathname(source_path) != ValidatePathState.OK:
+                invalid_paths.append(source_path)
+                continue
             if (os.path.split(source_path)[1].startswith('.') and
                     not self.app.profile['uploading-hidden-files']):
                 continue
             if os.path.isfile(source_path):
-                self.add_file_task(source_path, dir_name)
+                self.upload_file(source_path, dir_name)
             elif os.path.isdir(source_path):
                 scan_folders(source_path)
+
         self.app.blink_page(self)
         self.scan_tasks()
 
-    def add_file_task(self, source_path, dir_name):
-        '''创建新的上传任务'''
-        row = self.get_task_db(source_path)
-        if row:
+        if not invalid_paths:
             return
+        dialog = Gtk.Dialog(_('Invalid Filepath'), self.app.window,
+                            Gtk.DialogFlags.MODAL,
+                            (Gtk.STOCK_CLOSE, Gtk.ResponseType.OK))
+        dialog.set_default_size(640, 480)
+        dialog.set_border_width(10)
+        box = dialog.get_content_area()
+
+        scrolled_window = Gtk.ScrolledWindow()
+        box.pack_start(scrolled_window, True, True, 0)
+        text_buffer = Gtk.TextBuffer()
+        textview = Gtk.TextView.new_with_buffer(text_buffer)
+        scrolled_window.add(textview)
+        for invalid_path in invalid_paths:
+            text_buffer.insert_at_cursor(invalid_path)
+            text_buffer.insert_at_cursor('\n')
+
+        infobar = Gtk.InfoBar()
+        infobar.set_message_type(Gtk.MessageType.ERROR)
+        box.pack_end(infobar, False, False, 0)
+        info_label= Gtk.Label()
+        infobar.get_content_area().pack_start(info_label, False, False, 0)
+        info_label.set_label(''.join([
+            '* ', ValidatePathStateText[1], '\n',
+            '* ', ValidatePathStateText[2], '\n',
+            '* ', ValidatePathStateText[3], '\n',
+        ]))
+
+        box.show_all()
+        dialog.run()
+        dialog.destroy()
+
+    def upload_file(self, source_path, dir_name):
+        '''上传一个文件'''
+        row = self.get_task_db(source_path)
         source_dir, filename = os.path.split(source_path)
         
         path = os.path.join(dir_name, filename)
         size = os.path.getsize(source_path)
         total_size = util.get_human_size(size)[0]
-        tooltip = gutil.escape(
-                _('From {0}\nTo {1}').format(source_path, path))
+        tooltip = gutil.escape(_('From {0}\nTo {1}').format(source_path, path))
         if size < 2 ** 27:           # 128M 
             threshold = 2 ** 17      # 128K
         elif size < 2 ** 29:         # 512M
@@ -355,8 +491,7 @@ class UploadPage(Gtk.Box):
         elif size < 10 * (2 ** 30):  # 10G
             threshold = math.ceil(size / 1000)
         else:
-            self.app.toast(
-                    _('{0} is too large to upload (>10G).').format(path))
+            self.app.toast(_('{0} is too large to upload (>10G).').format(path))
             return
         task = [
             filename,
@@ -370,7 +505,7 @@ class UploadPage(Gtk.Box):
             0,
             tooltip,
             threshold,
-            ]
+        ]
         row_id = self.add_task_db(task)
         task.insert(0, row_id)
         self.liststore.append(task)
@@ -454,7 +589,9 @@ class UploadPage(Gtk.Box):
         def do_worker_merge_files(fid):
             def on_create_superfile(pcs_file, error=None):
                 if error or not pcs_file:
-                    print('on create superfile:', pcs_file, error)
+                    self.app.toast(_('Failed to upload, please try again'))
+                    logger.error('UploadPage.do_worker_merge_files: %s, %s' %
+                                 (pcs_file, error))
                     do_worker_error(fid)
                     return
                 else:
@@ -468,12 +605,12 @@ class UploadPage(Gtk.Box):
             if not row:
                 return
             if not block_list:
-                # TODO
+                # TODO:
                 pass
             else:
-                gutil.async_call(
-                    pcs.create_superfile, self.app.cookie, row[PATH_COL],
-                    block_list, callback=on_create_superfile)
+                gutil.async_call(pcs.create_superfile, self.app.cookie,
+                                 row[PATH_COL], block_list,
+                                 callback=on_create_superfile)
 
         def on_worker_uploaded(worker, fid):
             GLib.idle_add(do_worker_uploaded, fid)
@@ -489,9 +626,10 @@ class UploadPage(Gtk.Box):
             row[HUMANSIZE_COL] = '{0} / {1}'.format(total_size, total_size)
             row[STATE_COL] = State.FINISHED
             row[STATENAME_COL] = StateNames[State.FINISHED]
-            self.update_task_db(row)
+            self.update_task_db(row, force=True)
             self.workers.pop(fid, None)
             self.app.toast(_('{0} uploaded').format(row[NAME_COL]))
+            self.app.home_page.reload()
             self.scan_tasks()
 
         def on_worker_disk_error(worker, fid):
@@ -572,6 +710,16 @@ class UploadPage(Gtk.Box):
     def on_remove_button_clicked(self, button):
         self.operate_selected_rows(self.remove_task)
 
+    def on_remove_finished_button_clicked(self, button):
+        tree_iters = []
+        for row in self.liststore:
+            if row[STATE_COL] == State.FINISHED:
+                tree_iters.append(self.liststore.get_iter(row.path))
+        for tree_iter in tree_iters:
+            if tree_iter:
+                self.remove_task_db(self.liststore[tree_iter][FID_COL])
+                self.liststore.remove(tree_iter)
+
     def on_open_folder_button_clicked(self, button):
         model, tree_paths = self.selection.get_selected_rows()
         if not tree_paths or len(tree_paths) != 1:
@@ -582,5 +730,8 @@ class UploadPage(Gtk.Box):
         self.app.home_page.load(dir_name)
         self.app.switch_page(self.app.home_page)
 
-    def on_upload_button_clicked(self, button):
-        self.add_task()
+    def on_upload_file_button_clicked(self, button):
+        self.add_file_task()
+
+    def on_upload_folder_button_clicked(self, button):
+        self.add_folder_task()

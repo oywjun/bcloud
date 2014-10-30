@@ -12,14 +12,19 @@ from gi.repository import Gtk
 
 import bcloud
 
+HOME_DIR = os.path.expanduser('~')
+LOCAL_DIR = os.path.join(HOME_DIR, '.local')
 if __file__.startswith('/usr/local/'):
     PREF = '/usr/local/share'
 elif __file__.startswith('/usr/'):
     PREF = '/usr/share'
+elif __file__.startswith(LOCAL_DIR):
+    PREF = os.path.join(LOCAL_DIR, 'share')
 else:
     PREF = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'share')
+
 NAME = 'bcloud'
-ICON_PATH = os.path.join(PREF, NAME, 'bcloud.png')
+ICON_PATH = os.path.join(PREF, NAME, 'icons')
 COLOR_SCHEMA = os.path.join(PREF, NAME, 'color_schema.json')
 
 LOCALEDIR = os.path.join(PREF, 'locale')
@@ -31,15 +36,20 @@ DBUS_APP_NAME = 'org.liulang.bcloud'
 APPNAME = 'BCloud'
 VERSION = bcloud.__version__
 HOMEPAGE = 'https://github.com/LiuLang/bcloud'
-AUTHORS = ['LiuLang <gsushzhsosgsu@gmail.com>', ]
+# 这里只列出了提交代码在三次以上的开发者, 完整的开发者信息可以在
+# https://github.com/LiuLang/bcloud/pulls 查看
+AUTHORS = [
+    'LiuLang <gsushzhsosgsu@gmail.com>',
+    'CzBiX <czbix@live.com>',
+]
 COPYRIGHT = 'Copyright (c) 2014 LiuLang'
 DESCRIPTION = _('Baidu Pan client for GNU/Linux desktop users.')
 
-HOME_DIR = os.path.expanduser('~')
 CACHE_DIR = os.path.join(HOME_DIR, '.cache', NAME)
 
 # Check Gtk version <= 3.6
 GTK_LE_36 = (Gtk.MAJOR_VERSION == 3) and (Gtk.MINOR_VERSION <= 6)
+GTK_GE_312 = (Gtk.MAJOR_VERSION == 3) and (Gtk.MINOR_VERSION >= 12)
 
 CONF_DIR = os.path.join(HOME_DIR, '.config', NAME)
 _conf_file = os.path.join(CONF_DIR, 'conf.json')
@@ -47,7 +57,7 @@ _conf_file = os.path.join(CONF_DIR, 'conf.json')
 _base_conf = {
     'default': '',
     'profiles': [],
-    }
+}
 
 def check_first():
     '''这里, 要创建基本的目录结构'''

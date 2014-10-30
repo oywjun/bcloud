@@ -10,16 +10,18 @@
 import json
 import os
 import re
-import sys
 
-sys.path.insert(0, os.path.dirname(__file__))
-import auth
-import const
-import encoder
-import hasher
-import net
-from RequestCookie import RequestCookie
-import util
+from lxml import html
+from lxml.cssselect import CSSSelector as CSS
+
+from bcloud import auth
+from bcloud import const
+from bcloud import encoder
+from bcloud import hasher
+from bcloud.log import logger
+from bcloud import net
+from bcloud.RequestCookie import RequestCookie
+from bcloud import util
 
 RAPIDUPLOAD_THRESHOLD = 256 * 1024  # 256K
 
@@ -30,10 +32,8 @@ def get_quota(cookie, tokens):
         const.PAN_API_URL,
         'quota?channel=chunlei&clienttype=0&web=1',
         '&t=', util.timestamp(),
-        ])
-    req = net.urlopen(url, headers={
-        'Cookie': cookie.header_output(),
-        })
+    ])
+    req = net.urlopen(url, headers={'Cookie': cookie.header_output()})
     if req:
         content = req.data
         return json.loads(content.decode())
@@ -50,6 +50,8 @@ def get_user_uk(cookie, tokens):
         match = re.findall('/share/home\?uk=(\d+)" target=', content)
         if len(match) == 1:
             return match[0]
+        else:
+            logger.warn('get_user_uk(), failed to parse uk, %s' % url)
     return None
 
 def list_share(cookie, tokens, uk, page=1):
@@ -71,11 +73,11 @@ def list_share(cookie, tokens, uk, page=1):
         '&query_uk=', str(uk),
         '&channel=chunlei&clienttype=0&web=1',
         '&bdstoken=', tokens['bdstoken'],
-        ])
+    ])
     req = net.urlopen(url, headers={
         'Cookie': cookie.header_output(),
         'Referer': const.SHARE_REFERER,
-        })
+    })
     if req:
         content = req.data
         return json.loads(content.decode())
@@ -101,11 +103,11 @@ def list_share_path(cookie, tokens, uk, path, share_id, page):
         '&uk=', uk,
         '&_=', util.timestamp(),
         '&bdstoken=', tokens['bdstoken'],
-        ])
+    ])
     req = net.urlopen(url, headers={
         'Cookie': cookie.header_output(),
         'Referer': const.SHARE_REFERER,
-        })
+    })
     if req:
         content = req.data
         return json.loads(content.decode())
@@ -122,6 +124,7 @@ def get_share_page(url):
         if not match:
             match = re.findall('viewShareData=(.+");FileUtils.spublic', content)
             if not match:
+                logger.error('get_share_page(): %s, %s' % (url, match))
                 return None
             list_ = json.loads(json.loads(match[0]))
         else:
@@ -153,9 +156,9 @@ def enable_share(cookie, tokens, fid_list):
         const.PAN_URL,
         'share/set?channel=chunlei&clienttype=0&web=1',
         '&bdstoken=', tokens['bdstoken'],
-        ])
-    data = encoder.encode_uri('fid_list=' + json.dumps(fid_list) + 
-            '&schannel=0&channel_list=[]')
+    ])
+    data = encoder.encode_uri(
+            'fid_list={0}&schannel=0&channel_list=[]'.format(fid_list))
     req = net.urlopen(url, headers={
         'Cookie': cookie.header_output(),
         'Content-type': const.CONTENT_FORM_UTF8,
@@ -175,7 +178,7 @@ def disable_share(cookie, tokens, shareid_list):
         const.PAN_URL,
         'share/cancel?channel=chunlei&clienttype=0&web=1',
         '&bdstoken=', tokens['bdstoken'],
-        ])
+    ])
     data = 'shareid_list=' + encoder.encode_uri(json.dumps(shareid_list))
     req = net.urlopen(url, headers={
         'Cookie': cookie.header_output(),
@@ -198,7 +201,7 @@ def list_inbox(cookie, tokens, start=0, limit=20):
         '&_=', util.timestamp(),
         '&channel=chunlei&clienttype=0&web=1',
         '&bdstoken=', tokens['bdstoken'],
-        ])
+    ])
     req = net.urlopen(url, headers={'Cookie': cookie.header_output()})
     if req:
         content = req.data
@@ -225,7 +228,7 @@ def list_trash(cookie, tokens, path='/', page=1, num=100):
         '&order=time&desc=1',
         '&_=', util.timestamp(),
         '&bdstoken=', tokens['bdstoken'],
-        ])
+    ])
     req = net.urlopen(url, headers={'Cookie': cookie.header_output()})
     if req:
         content = req.data
@@ -243,7 +246,7 @@ def restore_trash(cookie, tokens, fidlist):
         'recycle/restore?channel=chunlei&clienttype=0&web=1',
         '&t=', util.timestamp(),
         '&bdstoken=', tokens['bdstoken'],
-        ])
+    ])
     data = 'fidlist=' + encoder.encode_uri_component(json.dumps(fidlist))
     req = net.urlopen(url, headers={
         'Cookie': cookie.header_output(),
@@ -266,7 +269,7 @@ def delete_trash(cookie, tokens, fidlist):
         const.PAN_API_URL,
         'recycle/delete?channel=chunlei&clienttype=0&web=1',
         '&bdstoken=', tokens['bdstoken'],
-        ])
+    ])
     data = 'fidlist=' + encoder.encode_uri_component(json.dumps(fidlist))
     req = net.urlopen(url, headers={
         'Cookie': cookie.header_output(),
@@ -285,7 +288,7 @@ def clear_trash(cookie, tokens):
         'recycle/clear?channel=chunlei&clienttype=0&web=1',
         '&t=', util.timestamp(),
         '&bdstoken=', tokens['bdstoken'],
-        ])
+    ])
     # 使用POST方式发送命令, 但data为空.
     req = net.urlopen(url, headers={
         'Cookie': cookie.header_output(),
@@ -323,11 +326,11 @@ def list_dir(cookie, tokens, path, page=1, num=100):
         '&order=time&desc=1',
         '&_=', timestamp,
         '&bdstoken=', tokens['bdstoken'],
-        ])
+    ])
     req = net.urlopen(url, headers={
         'Content-type': const.CONTENT_FORM_UTF8,
         'Cookie': cookie.sub_output('BAIDUID', 'BDUSS', 'PANWEB', 'cflag'),
-        })
+    })
     if req:
         content = req.data
         return json.loads(content.decode())
@@ -344,11 +347,11 @@ def mkdir(cookie, tokens, path):
         const.PAN_API_URL, 
         'create?a=commit&channel=chunlei&clienttype=0&web=1',
         '&bdstoken=', tokens['bdstoken'],
-        ])
+    ])
     data = ''.join([
         'path=', encoder.encode_uri_component(path),
         '&isdir=1&size=&block_list=%5B%5D&method=post',
-        ])
+    ])
     req = net.urlopen(url, headers={
         'Cookie': cookie.header_output(),
         'Content-type': const.CONTENT_FORM_UTF8,
@@ -368,7 +371,7 @@ def delete_files(cookie, tokens, filelist):
         const.PAN_API_URL,
         'filemanager?channel=chunlei&clienttype=0&web=1&opera=delete',
         '&bdstoken=', tokens['bdstoken'],
-        ])
+    ])
     data = 'filelist=' + encoder.encode_uri_component(json.dumps(filelist))
     req = net.urlopen(url, headers={
         'Content-type': const.CONTENT_FORM_UTF8,
@@ -393,7 +396,7 @@ def rename(cookie, tokens, filelist):
         const.PAN_API_URL,
         'filemanager?channel=chunlei&clienttype=0&web=1&opera=rename',
         '&bdstoken=', tokens['bdstoken'],
-        ])
+    ])
     data = 'filelist=' + encoder.encode_uri_component(json.dumps(filelist))
     req = net.urlopen(url, headers={
         'Content-type': const.CONTENT_FORM_UTF8,
@@ -417,7 +420,7 @@ def move(cookie, tokens, filelist):
         const.PAN_API_URL,
         'filemanager?channel=chunlei&clienttype=0&web=1&opera=move',
         '&bdstoken=', tokens['bdstoken'],
-        ])
+    ])
     data = 'filelist=' + encoder.encode_uri_component(json.dumps(filelist))
     req = net.urlopen(url, headers={
         'Cookie': cookie.header_output(),
@@ -441,7 +444,7 @@ def copy(cookie, tokens, filelist):
         const.PAN_API_URL,
         'filemanager?channel=chunlei&clienttype=0&web=1&opera=copy',
         '&bdstoken=', tokens['bdstoken'],
-        ])
+    ])
     data = 'filelist=' + encoder.encode_uri_component(json.dumps(filelist))
     req = net.urlopen(url, headers={
         'Cookie': cookie.header_output(),
@@ -477,7 +480,7 @@ def get_category(cookie, tokens, category, page=1):
         '&order=time&desc=1',
         '&_=', timestamp,
         '&bdstoken=', cookie.get('STOKEN').value,
-        ])
+    ])
     req = net.urlopen(url, headers={'Cookie': cookie.header_output()})
     if req:
         content = req.data
@@ -494,18 +497,16 @@ def get_download_link(cookie, tokens, path):
             就返回原来的dlink;
     '''
     metas = get_metas(cookie, tokens, path)
-    if (not metas or metas.get('errno', 1) != 0 or
+    if (not metas or metas.get('errno', -1) != 0 or
             'info' not in metas or len(metas['info']) != 1):
+        logger.error('get_download_link(): %s' % metas)
         return None
     dlink = metas['info'][0]['dlink']
-    url = ''.join([
-        dlink,
-        '&cflg=', cookie.get('cflag').value
-        ])
+    url = '{0}&cflg={1}'.format(dlink, cookie.get('cflag').value)
     req = net.urlopen_without_redirect(url, headers={
-            'Cookie': cookie.sub_output('BAIDUID', 'BDUSS', 'cflag'),
-            'Accept': const.ACCEPT_HTML,
-            })
+        'Cookie': cookie.sub_output('BAIDUID', 'BDUSS', 'cflag'),
+        'Accept': const.ACCEPT_HTML,
+    })
     if not req:
         return url
     else:
@@ -521,9 +522,9 @@ def stream_download(cookie, tokens, path):
         'file?method=download',
         '&path=', encoder.encode_uri_component(path),
         '&app_id=250528',
-        ])
-    req = net.urlopen_without_redirect(
-            url, headers={'Cookie': cookie.header_output()})
+    ])
+    req = net.urlopen_without_redirect(url, headers=
+            {'Cookie': cookie.header_output()})
     if req:
         return req
     else:
@@ -542,7 +543,7 @@ def get_streaming_playlist(cookie, path, video_type='M3U8_AUTO_480'):
         '&path=', encoder.encode_uri_component(path),
         '&type=', video_type,
         '&app_id=250528',
-        ])
+    ])
     req = net.urlopen(url, headers={'Cookie': cookie.header_output()})
     if req:
         return req.data
@@ -562,21 +563,25 @@ def upload_option(cookie, path):
         '&dir=', encoder.encode_uri_component(dir_name),
         '&filename=', encoder.encode_uri_component(file_name),
         '&', cookie.sub_output('BDUSS'),
-        ])
+    ])
     resp = net.urloption(url, headers={'Accept': const.ACCEPT_HTML})
     if resp:
         return resp.getheaders()
     else:
         return None
 
-def upload(cookie, source_path, path, ondup='overwrite'):
+def upload(cookie, source_path, path, upload_mode):
     '''上传一个文件.
 
     这个是使用的网页中的上传接口.
+    upload_mode - 只能是1或者2.
     ondup - 如果文件已在服务器上存在, 该如何操作. 有两个选项:
             overwrite, 直接将其重写.
             newcopy, 保留原先的文件, 并在新上传的文件名尾部加上当前时间戳.
     '''
+    ondup = const.UPLOAD_ONDUP[upload_mode]
+    if not ondup:
+        ondup = 'newcopy'
     dir_name, file_name = os.path.split(path)
     url = ''.join([
         const.PCS_URL_C,
@@ -585,25 +590,23 @@ def upload(cookie, source_path, path, ondup='overwrite'):
         '&dir=', encoder.encode_uri_component(dir_name),
         '&filename=', encoder.encode_uri_component(file_name),
         '&', cookie.sub_output('BDUSS'),
-        ])
+    ])
     with open(source_path, 'rb') as fh:
         data = fh.read()
     fields = []
-    files = [
-        ('file', file_name, data),
-        ]
-    headers = {
-        'Accept': const.ACCEPT_HTML,
-        'Origin': const.PAN_URL,
-        }
+    files = [('file', file_name, data)]
+    headers = {'Accept': const.ACCEPT_HTML, 'Origin': const.PAN_URL}
     req = net.post_multipart(url, headers, fields, files)
     if req:
         return json.loads(req.data.decode())
     else:
         return None
 
-def rapid_upload(cookie, tokens, source_path, path):
+def rapid_upload(cookie, tokens, source_path, path, upload_mode):
     '''快速上传'''
+    ondup = const.UPLOAD_ONDUP[upload_mode]
+    if not ondup:
+        ondup = 'newcopy'
     content_length = os.path.getsize(source_path)
     assert content_length > RAPIDUPLOAD_THRESHOLD, 'file size is not satisfied!'
     dir_name, file_name = os.path.split(path)
@@ -621,10 +624,8 @@ def rapid_upload(cookie, tokens, source_path, path):
         '&path=', encoder.encode_uri_component(path),
         '&', cookie.sub_output('BDUSS'),
         '&bdstoken=', tokens['bdstoken'],
-        ])
-    req = net.urlopen(url, headers={
-        'Cookie': cookie.header_output(),
-        })
+    ])
+    req = net.urlopen(url, headers={'Cookie': cookie.header_output()})
     if req:
         return json.loads(req.data.decode())
     else:
@@ -642,15 +643,10 @@ def slice_upload(cookie, data):
         const.PCS_URL_C,
         'file?method=upload&type=tmpfile&app_id=250528',
         '&', cookie.sub_output('BDUSS'),
-        ])
+    ])
     fields = []
-    files = [
-        ('file', ' ', data),
-        ]
-    headers = {
-        'Accept': const.ACCEPT_HTML,
-        'Origin': const.PAN_URL,
-        }
+    files = [('file', ' ', data)]
+    headers = {'Accept': const.ACCEPT_HTML,'Origin': const.PAN_URL}
     req = net.post_multipart(url, headers, fields, files)
     if req:
         return json.loads(req.data.decode())
@@ -669,12 +665,11 @@ def create_superfile(cookie, path, block_list):
         'file?method=createsuperfile&app_id=250528',
         '&path=', encoder.encode_uri_component(path),
         '&', cookie.sub_output('BDUSS'),
-        ])
+    ])
     param = {'block_list': block_list}
     data = 'param=' + json.dumps(param)
-    req = net.urlopen(url, headers={
-        'Cookie': cookie.header_output(),
-        }, data=data.encode())
+    req = net.urlopen(url, headers={'Cookie': cookie.header_output()},
+                      data=data.encode())
     if req:
         return json.loads(req.data.decode())
     else:
@@ -696,7 +691,7 @@ def get_metas(cookie, tokens, filelist, dlink=True):
         const.PAN_API_URL,
         'filemetas?channel=chunlei&clienttype=0&web=1',
         '&bdstoken=', tokens['bdstoken'],
-        ])
+    ])
     if dlink:
         data = ('dlink=1&target=' +
                 encoder.encode_uri_component(json.dumps(filelist)))
@@ -727,7 +722,7 @@ def search(cookie, tokens, key, path='/'):
         '&recursion',
         '&timeStamp=', util.latency(),
         '&bdstoken=', tokens['bdstoken'],
-        ])
+    ])
     req = net.urlopen(url, headers={'Cookie': cookie.header_output()})
     if req:
         content = req.data
@@ -747,7 +742,7 @@ def cloud_add_link_task(cookie, tokens, source_url, save_path,
         const.PAN_URL,
         'rest/2.0/services/cloud_dl?channel=chunlei&clienttype=0&web=1',
         '&bdstoken=', tokens['bdstoken'],
-        ])
+    ])
     type_ = ''
     if source_url.startswith('ed2k'):
         type_ = '&type=3'
@@ -758,16 +753,15 @@ def cloud_add_link_task(cookie, tokens, source_url, save_path,
         '&source_url=', encoder.encode_uri_component(source_url),
         '&save_path=', encoder.encode_uri_component(save_path),
         '&type=', type_,
-        ]
+    ]
     if vcode:
         data.append('&input=')
         data.append(vcode_input)
         data.append('&vcode=')
         data.append(vcode)
     data = ''.join(data)
-    req = net.urlopen(url, headers={
-        'Cookie': cookie.header_output(),
-        }, data=data.encode())
+    req = net.urlopen(url, headers={'Cookie': cookie.header_output()},
+                      data=data.encode())
     if req:
         content = req.data
         return json.loads(content.decode())
@@ -790,7 +784,7 @@ def cloud_add_bt_task(cookie, tokens, source_url, save_path, selected_idx,
         const.PAN_URL,
         'rest/2.0/services/cloud_dl?channel=chunlei&clienttype=0&web=1',
         '&bdstoken=', tokens['bdstoken'],
-        ])
+    ])
     type_ = '2'
     url_type = 'source_path'
     if source_url.startswith('magnet:'):
@@ -807,16 +801,15 @@ def cloud_add_bt_task(cookie, tokens, source_url, save_path, selected_idx,
         '&t=', util.timestamp(),
         '&', url_type, '=', encoder.encode_uri_component(source_url),
         '&type=', type_
-        ]
+    ]
     if vcode:
         data.append('&input=')
         data.append(vcode_input)
         data.append('&vcode=')
         data.append(vcode)
     data = ''.join(data)
-    req = net.urlopen(url, headers={
-        'Cookie': cookie.header_output(),
-        }, data=data.encode())
+    req = net.urlopen(url, headers={'Cookie': cookie.header_output()},
+                      data=data.encode())
     if req:
         content = req.data
         return json.loads(content.decode())
@@ -836,7 +829,7 @@ def cloud_query_sinfo(cookie, tokens, source_path):
         '&source_path=', encoder.encode_uri_component(source_path),
         '&type=2',
         '&t=', util.timestamp(),
-        ])
+    ])
     req = net.urlopen(url, headers={'Cookie': cookie.header_output()})
     if req:
         content = req.data
@@ -857,16 +850,15 @@ def cloud_query_magnetinfo(cookie, tokens, source_url, save_path):
         const.PAN_URL,
         'rest/2.0/services/cloud_dl?channel=chunlei&clienttype=0&web=1',
         '&bdstoken=', tokens['bdstoken'],
-        ])
+    ])
     data = ''.join([
         'method=query_magnetinfo&app_id=250528',
         '&source_url=', encoder.encode_uri_component(source_url),
         '&save_path=', encoder.encode_uri_component(save_path),
         '&type=4',
-        ])
-    req = net.urlopen(url, headers={
-        'Cookie': cookie.header_output(),
-        }, data=data.encode())
+    ])
+    req = net.urlopen(url, headers={'Cookie': cookie.header_output()},
+                      data=data.encode())
     if req:
         content = req.data
         return json.loads(content.decode())
@@ -886,7 +878,7 @@ def cloud_list_task(cookie, tokens, start=0):
         '&start=', str(start),
         '&limit=50&method=list_task&app_id=250528',
         '&t=', util.timestamp(),
-        ])
+    ])
     req = net.urlopen(url, headers={'Cookie': cookie.header_output()})
     if req:
         content = req.data
@@ -909,7 +901,7 @@ def cloud_query_task(cookie, tokens, task_ids):
         '&task_ids=', ','.join(task_ids),
         '&t=', util.timestamp(),
         '&channel=chunlei&clienttype=0&web=1',
-        ])
+    ])
     req = net.urlopen(url, headers={'Cookie': cookie.header_output()})
     if req:
         content = req.data
@@ -931,7 +923,7 @@ def cloud_cancel_task(cookie, tokens, task_id):
         '&method=cancel_task&app_id=250528',
         '&t=', util.timestamp(),
         '&channel=chunlei&clienttype=0&web=1',
-        ])
+    ])
     req = net.urlopen(url, headers={'Cookie': cookie.header_output()})
     if req:
         content = req.data
@@ -952,7 +944,7 @@ def cloud_delete_task(cookie, tokens, task_id):
         '&method=delete_task&app_id=250528',
         '&t=', util.timestamp(),
         '&channel=chunlei&clienttype=0&web=1',
-        ])
+    ])
     req = net.urlopen(url, headers={'Cookie': cookie.header_output()})
     if req:
         content = req.data
@@ -968,10 +960,72 @@ def cloud_clear_task(cookie, tokens):
         '&channel=chunlei&clienttype=0&web=1',
         '&t=', util.timestamp(),
         '&bdstoken=', tokens['bdstoken'],
-        ])
+    ])
     req = net.urlopen(url, headers={'Cookie': cookie.header_output()})
     if req:
         content = req.data
         return json.loads(content.decode())
     else:
         return None
+
+def get_avatar(cookie):
+    '''获取当前用户的头像'''
+    def parse_avatar(content):
+        img_sel = CSS('img.account-avatar-show')
+        tree = html.fromstring(content)
+        img_elems = img_sel(tree)
+        if len(img_elems) == 1:
+            return img_elems[0].attrib.get('src', None)
+        else:
+            return None
+
+    url = 'http://passport.baidu.com/center?_t=' + util.timestamp()
+    req = net.urlopen(url, headers={'Cookie': cookie.header_output()})
+    if req:
+        return parse_avatar(req.data.decode())
+    else:
+        return None
+
+
+def share_transfer(shareid, bdstoken, myuk, paths, dest, cookie):
+    """
+    :param paths: the paths of file to save
+    :type paths: list
+    """
+    url = ('http://yun.baidu.com/share/transfer?shareid=%sfrom=%s'
+           '&bdstoken=%s&channel=chunlei&clienttype=0&web=1&app_id=250528')
+    if len(paths) > 1:
+        url += '&ondup=newcopy&async=1'
+    url %= shareid, myuk, bdstoken
+
+    req = net.urlopen(url, headers={
+        'Cookie': cookie.header_output(),
+        'Content-Type': const.CONTENT_FORM_UTF8
+    }, data={'filelist': paths, 'path': dest})
+    if req:
+        content = req.data.decode()
+        return json.loads(content)
+    else:
+        return None
+
+
+def verify_share_password(share_id, share_uk, pwd, vcode=''):
+    """
+    :return: None for failed, otherwise will return cookie
+    """
+    url = (const.PAN_URL + 'share/verify?shareid=%s&uk=%s'
+           '&channel=chunlei&clienttype=0&web=1')
+    url %= share_id, share_uk
+
+    req = net.urlopen(url, data={'pwd': pwd, 'vcode': vcode})
+
+    if req:
+        content = req.data.decode()
+        result = json.loads(content)
+        if result.errno == 0:
+            return req.headers.get_all('Set-Cookie')
+        if result.errno in (-19, -62, -63):
+            pass  # TODO: need verify code
+
+    return None
+

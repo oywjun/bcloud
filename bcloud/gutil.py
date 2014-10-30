@@ -7,20 +7,26 @@ import json
 import os
 import subprocess
 import threading
+import time
+import traceback
 
 import dbus
 from gi.repository import GdkPixbuf
 from gi.repository import Gio
 from gi.repository import Gtk
 from gi.repository import GLib
-try:
-    import keyring
-except (ImportError, ValueError) as e:
-    print(e, ', keyring will be disabled')
 
 from bcloud import Config
+from bcloud.log import logger
 from bcloud import net
+from bcloud import pcs
 from bcloud import util
+try:
+    import keyring
+    keyring_available = True
+except (ImportError, ValueError):
+    logger.warn(traceback.format_exc())
+    keyring_available = False
 
 DEFAULT_PROFILE = {
     'window-size': (960, 680),
@@ -36,21 +42,41 @@ DEFAULT_PROFILE = {
     'auto-signin': False,
     'upload-hidden-files': True,  # 同时上传隐藏文件.
     'concurr-tasks': 2,     # 下载/上传同时进行的任务数, 1~5
+    'download-segments': 3, # 下载单个任务的线程数 1~10
     'retries-each': 5,      # 隔5分钟后尝试重新下载
-    'download-timeout': 30, # 30 秒后下载超时
-    }
-RETRIES = 5   # 调用keyring模块与libgnome-keyring交互的尝试次数
+    'download-timeout': 60, # 60 秒后下载超时
+    'download-mode': 0,     # 下载时如果本地已存在同名文件时的操作方式
+    'upload-mode': 0,       # 上传时如果服务器端已存在同名文件时的操作方式
+    'view-mode': {          # 保存的视图模式
+        'HomePage': 0,
+        'CategoryPage': 0,
+        'BTPage': 0,
+        'OtherPage': 0,
+        'DocPage': 0,
+        'PicturePage': 0,
+        'MusicPage': 0,
+        'VideoPage': 0,
+    },
+}
+RETRIES = 3   # 调用keyring模块与libgnome-keyring交互的尝试次数
+AVATAR_UPDATE_INTERVAL = 604800  # 用户头像更新频率, 默认是7天
 
-# calls f on another thread
+
 def async_call(func, *args, callback=None):
+    '''Call `func` in background thread, and then call `callback` in Gtk main thread.
+
+    If error occurs in `func`, error will keep the traceback and passed to
+    `callback` as second parameter. Always check `error` is not None.
+    '''
     def do_call():
         result = None
         error = None
 
         try:
             result = func(*args)
-        except Exception as e:
-            error = e
+        except Exception:
+            error = traceback.format_exc()
+            logger.error(error)
         if callback:
             GLib.idle_add(callback, result, error)
 
@@ -67,60 +93,77 @@ def xdg_open(uri):
     '''
     try:
         subprocess.call(['xdg-open', uri, ])
-    except FileNotFoundError as e:
-        print(e)
+    except FileNotFoundError:
+        logger.error(traceback.format_exc())
 
-def update_liststore_image(liststore, tree_iter, col, pcs_file,
-                           dir_name, icon_size=96):
+def update_liststore_image(liststore, tree_iters, col, pcs_files, dir_name,
+                           icon_size=96):
     '''下载文件缩略图, 并将它显示到liststore里.
     
-    pcs_file - 里面包含了几个必要的字段.
-    dir_name - 缓存目录, 下载到的图片会保存这个目录里.
-    size     - 指定图片的缩放大小, 默认是96px.
+    pcs_files - 里面包含了几个必要的字段.
+    dir_name  - 缓存目录, 下载到的图片会保存这个目录里.
+    size      - 指定图片的缩放大小, 默认是96px.
     '''
-    def _update_image():
+    def update_image(filepath, tree_iter):
         try:
-            pix = GdkPixbuf.Pixbuf.new_from_file_at_size(
-                    filepath, icon_size, icon_size)
+            pix = GdkPixbuf.Pixbuf.new_from_file_at_size(filepath, icon_size,
+                                                         icon_size)
             tree_path = liststore.get_path(tree_iter)
             if tree_path is None:
                 return
             liststore[tree_path][col] = pix
-        except GLib.GError as e:
-            pass
+        except GLib.GError:
+            logger.error(traceback.format_exc())
 
-    def _dump_image(req, error=None):
-        if error or not req:
-            return
+    def dump_image(url, filepath):
+        req = net.urlopen(url)
+        if not req or not req.data:
+            logger.warn('update_liststore_image(), failed to request %s' % url)
+            return False
         with open(filepath, 'wb') as fh:
             fh.write(req.data)
-        # Now, check its mime type
-        file_ = Gio.File.new_for_path(filepath)
-        file_info = file_.query_info(
-                Gio.FILE_ATTRIBUTE_STANDARD_CONTENT_TYPE,
-                Gio.FileQueryInfoFlags.NONE)
-        content_type = file_info.get_content_type()
-        if 'image' in content_type:
-            _update_image()
+        return True
 
-    if 'thumbs' not in pcs_file:
-        return
-    if 'url1' in pcs_file['thumbs']:
-        key = 'url1'
-    elif 'url2' in pcs_file['thumbs']:
-        key = 'url2'
-    else:
-        return
-    fs_id = pcs_file['fs_id']
-    url = pcs_file['thumbs'][key]
+    for tree_iter, pcs_file in zip(tree_iters, pcs_files):
+        if 'thumbs' not in pcs_file:
+            continue
+        if 'url1' in pcs_file['thumbs']:
+            key = 'url1'
+        elif 'url2' in pcs_file['thumbs']:
+            key = 'url2'
+        elif 'url3' in pcs_file['thumbs']:
+            key = 'url3'
+        else:
+            continue
+        fs_id = pcs_file['fs_id']
+        url = pcs_file['thumbs'][key]
+        filepath = os.path.join(dir_name, '{0}.jpg'.format(fs_id))
+        if os.path.exists(filepath) and os.path.getsize(filepath):
+            GLib.idle_add(update_image, filepath, tree_iter)
+        elif not url or len(url) < 10:
+            logger.warn('update_liststore_image(), failed to get url')
+        else:
+            status = dump_image(url, filepath)
+            if status:
+                GLib.idle_add(update_image, filepath, tree_iter)
 
-    filepath = os.path.join(dir_name, '{0}.jpg'.format(fs_id))
-    if os.path.exists(filepath) and os.path.getsize(filepath):
-        _update_image()
+def update_avatar(cookie, dir_name):
+    '''获取用户头像信息'''
+    filepath = os.path.join(dir_name, 'avatar.jpg')
+    if (os.path.exists(filepath) and
+            time.time() - os.stat(filepath).st_mtime <= AVATAR_UPDATE_INTERVAL):
+        return filepath
+    img_url = pcs.get_avatar(cookie)
+    if not img_url:
+        return None
     else:
-        if not url or len(url) < 10:
-            return
-        async_call(net.urlopen, url, callback=_dump_image)
+        req = net.urlopen(img_url)
+        if not req or not req.data:
+            logger.warn('gutil.update_avatar(), failed to request %s' % url)
+            return None
+        with open(filepath, 'wb') as fh:
+            fh.write(req.data)
+        return filepath
 
 def ellipse_text(text, length=10):
     if len(text) < length:
@@ -145,14 +188,19 @@ def load_profile(profile_name):
         if key not in profile:
             profile[key] = DEFAULT_PROFILE[key]
 
-    if globals().get('keyring'):
+    global keyring_available
+    if keyring_available:
         for i in range(RETRIES):
             try:
                 profile['password'] = keyring.get_password(
                         Config.DBUS_APP_NAME, profile['username'])
                 break
-            except dbus.exceptions.DBusException as e:
-                print(e)
+            except (keyring.errors.InitError, dbus.exceptions.DBusException):
+                logger.error(traceback.format_exc())
+        else:
+            keyring_available = False
+    if not profile['password']:
+        profile['password'] = ''
     return profile
 
 def dump_profile(profile):
@@ -167,12 +215,11 @@ def dump_profile(profile):
     if profile['remember-password'] and profile['password']:
         for i in range(RETRIES):
             try:
-                keyring.set_password(
-                        Config.DBUS_APP_NAME, profile['username'],
-                        profile['password'])
+                keyring.set_password(Config.DBUS_APP_NAME, profile['username'],
+                                     profile['password'])
                 break
-            except dbus.exceptions.DBusException as e:
-                print(e)
+            except dbus.exceptions.DBusException:
+                logger.error(traceback.format_exc())
     profile['password'] = ''
     with open(path, 'w') as fh:
         json.dump(profile, fh)

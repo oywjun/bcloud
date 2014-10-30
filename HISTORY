@@ -1,9 +1,67 @@
+v3.5.6 - 2014.10.24
+* Feature: add navigation button to path box; https://github.com/LiuLang/bcloud/pull/74, https://github.com/LiuLang/bcloud/pull/80
+* Feature: support drag and drop in IconWindow
+* Feature: save view mode in IconWindow
+* Feature: show avatar
+* Fixed: show default app_info in popup menu
+* Fixed: failed to load bcloud/bcloud.png; https://github.com/LiuLang/bcloud/pull/78
+* Fixed: TypeError: unknown type(null) in DownloadPage
+* i18n updated
+
+v3.5.5 - 2014.10.17
+* Change url request timeout from 30s to 50s
+* Change log level from DEBUG to INFO
+* Set max downlaod retries to 10
+* Set max segments of download to 10
+* Update icons in IconView in order
+* Set connection timeout to 60s by default
+* Fixed: TypeError: Argument 1 does not allow None as a value
+* Remvoe test code
+
+v3.5.4 - 2014.10.12
+* Fixed: 'CloudPage' object has not attribute 'on_remove_button_clicked'
+* Fixed: 'App' object has no attribute 'home_page'
+* Fixed: failed to check file downloaded signal
+* Fixed: check task exists in task list
+* Fixed: catch truncate() exception
+* Fixed: emit network-error signal when socket timed out
+* Fixed: type object 'State' has no attribute 'UPLOADING'; reported by @yui133107
+* Fixed: 'NoneType' object has no attribute 'value'
+* Feature: use new UI style in gtk-3.12
+* Feature: Signin Dialog redesigned
+* Feature: replace WAP API with passport API
+* Feature: use single thread when downloading small files
+* Add log module
+* Simplify download speed calculation
+* Redesign download speed label
+* Support Linut Mint 17
+* Not work with Ubuntu 12.04 any more
+* Using PKCS1_v1_5 as RSA encrypt method
+* i18n updated
+
+v3.5.3 - 2014.10.7
+* Fixed: modify file handler mode from `ab` to `rb+`. That's a serious problem!
+* Fixed: average download speed is incorrect; see https://github.com/LiuLang/bcloud/issues/15
+
+v3.5.2 - 2014.10.6
+* Feature: add download-mode option
+* Feature: add upload-mode option
+* Feature: add "Upload to this Folder" menu item
+* Feature: support multiple connetions per download task
+* Code format changed
+* Download manager redesigned
+* Fixed: remove task info when downloading task is removed from task-list
+* Fixed: uncheck remember-password button when keyring module is unavailable
+* Fixed: remove assertion of `ondup`
+* Fixed: catch URLError
+* i18n updated
+
 v3.5.1 - 2014.9.4
 * Automatically restart task when error occurs
 * Fixed: Gdk-WARNING **: gdk_window_set_icon_list: icons too large
 * Expires local cookie cache after 24h
 * Fixed: local variable password referenced before assignment; reported by @rmokerone
-* Fixe: failed to check upload folder; reported by @lilymona
+* Fixed: failed to check upload folder; reported by @lilymona
 * Rename filename when downloading
 * Notify user if failed to parse remote download link
 * Support debian 7.5
