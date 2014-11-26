@@ -129,6 +129,7 @@ class App:
         # icon_name, disname, tooltip, color
         self.nav_liststore = Gtk.ListStore(str, str, str, Gdk.RGBA)
         nav_treeview = Gtk.TreeView(model=self.nav_liststore)
+        nav_treeview.get_style_context().add_class(Gtk.STYLE_CLASS_SIDEBAR)
         self.nav_selection = nav_treeview.get_selection()
         nav_treeview.props.headers_visible = False
         nav_treeview.set_tooltip_column(TOOLTIP_COL)
@@ -153,7 +154,6 @@ class App:
         self.img_avatar = Gtk.Image()
         self.img_avatar.props.halign = Gtk.Align.CENTER
         left_box.pack_end(self.img_avatar, False, False, 5)
-
 
         self.notebook = Gtk.Notebook()
         self.notebook.props.show_tabs = False
