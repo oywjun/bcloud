@@ -1,5 +1,5 @@
 
-# Copyright (C) 2014 LiuLang <gsushzhsosgsu@gmail.com>
+# Copyright (C) 2014-2015 LiuLang <gsushzhsosgsu@gmail.com>
 # Use of this source code is governed by GPLv3 license that can be found
 # in http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -291,14 +291,14 @@ class UploadPage(Gtk.Box):
             self.commit_count = 0
             self.conn.commit()
 
-    def add_task_db(self, task):
+    def add_task_db(self, task, force=True):
         '''向数据库中写入一个新的任务记录, 并返回它的fid'''
         sql = '''INSERT INTO upload (
         name, source_path, path, size, curr_size, state, state_name,
         human_size, percent, tooltip, threshold)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
         req = self.cursor.execute(sql, task)
-        self.check_commit(force=True)
+        self.check_commit(force=force)
         return req.lastrowid
 
     def add_slice_db(self, fid, slice_end, md5):
@@ -344,12 +344,12 @@ class UploadPage(Gtk.Box):
         ])
         self.check_commit(force=force)
 
-    def remove_task_db(self, fid):
+    def remove_task_db(self, fid, force=False):
         '''将任务从数据库中删除'''
         self.remove_slice_db(fid)
         sql = 'DELETE FROM upload WHERE fid=?'
         self.cursor.execute(sql, [fid, ])
-        self.check_commit(force=True)
+        self.check_commit(force=force)
 
     def remove_slice_db(self, fid):
         '''将上传任务的分片从数据库中删除'''
@@ -403,6 +403,15 @@ class UploadPage(Gtk.Box):
         if source_paths:
             self.upload_files(source_paths, dir_name)
 
+    def add_bg_task(self, source_path, dest_path):
+        GLib.idle_add(self.bg_upload_file,  source_path, dest_path)
+
+    def bg_upload_file(self, source_path, dest_path):
+
+        self.check_first()
+        self.upload_file(source_path, dest_path)
+        self.scan_tasks()
+
     # Open API
     def upload_files(self, source_paths, dir_name=None):
         '''批量创建上传任务, 会扫描子目录并依次上传.
@@ -432,7 +441,7 @@ class UploadPage(Gtk.Box):
                 invalid_paths.append(source_path)
                 continue
             if (os.path.split(source_path)[1].startswith('.') and
-                    not self.app.profile['uploading-hidden-files']):
+                    not self.app.profile['upload-hidden-files']):
                 continue
             if os.path.isfile(source_path):
                 self.upload_file(source_path, dir_name)
@@ -506,7 +515,7 @@ class UploadPage(Gtk.Box):
             tooltip,
             threshold,
         ]
-        row_id = self.add_task_db(task)
+        row_id = self.add_task_db(task, force=False)
         task.insert(0, row_id)
         self.liststore.append(task)
 
@@ -556,10 +565,10 @@ class UploadPage(Gtk.Box):
             self.scan_tasks()
 
     def scan_tasks(self):
-        if len(self.workers.keys()) >= self.app.profile['concurr-tasks']:
+        if len(self.workers.keys()) >= self.app.profile['concurr-upload']:
             return
         for row in self.liststore:
-            if len(self.workers.keys()) >= self.app.profile['concurr-tasks']:
+            if len(self.workers.keys()) >= self.app.profile['concurr-upload']:
                 break
             if row[STATE_COL] == State.WAITING:
                 self.start_worker(row)
@@ -717,8 +726,9 @@ class UploadPage(Gtk.Box):
                 tree_iters.append(self.liststore.get_iter(row.path))
         for tree_iter in tree_iters:
             if tree_iter:
-                self.remove_task_db(self.liststore[tree_iter][FID_COL])
+                self.remove_task_db(self.liststore[tree_iter][FID_COL], False)
                 self.liststore.remove(tree_iter)
+        self.check_commit()
 
     def on_open_folder_button_clicked(self, button):
         model, tree_paths = self.selection.get_selected_rows()

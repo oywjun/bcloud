@@ -1,5 +1,5 @@
 
-# Copyright (C) 2014 LiuLang <gsushzhsosgsu@gmail.com>
+# Copyright (C) 2014-2015 LiuLang <gsushzhsosgsu@gmail.com>
 # Use of this source code is governed by GPLv3 license that can be found
 # in http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -23,6 +23,7 @@ from bcloud import gutil
 from bcloud import pcs
 from bcloud import util
 from bcloud.const import State
+from bcloud.Shutdown import Shutdown
 
 
 TASK_FILE = 'tasks.sqlite'
@@ -41,6 +42,29 @@ StateNames = (
 )
 
 
+class ConfirmDialog(Gtk.MessageDialog):
+
+    def __init__(self, app, multiple_files):
+        if multiple_files:
+            text = _('Do you want to remove unfinished tasks?')
+        else:
+            text = _('Do you want to remove unfinished task?')
+        super().__init__(app.window, Gtk.DialogFlags.MODAL,
+                         Gtk.MessageType.WARNING, Gtk.ButtonsType.YES_NO,
+                         text)
+        self.app = app
+        box = self.get_message_area()
+        remember_button = Gtk.CheckButton(_('Do not ask again'))
+        remember_button.set_active(
+                not self.app.profile['confirm-download-deletion'])
+        remember_button.connect('toggled', self.on_remember_button_toggled)
+        box.pack_start(remember_button, False, False, 0)
+        box.show_all()
+
+    def on_remember_button_toggled(self, button):
+        self.app.profile['confirm-download-deletion'] = not button.get_active()
+
+
 class DownloadPage(Gtk.Box):
     '''下载任务管理器, 处理下载任务的后台调度.
 
@@ -57,7 +81,7 @@ class DownloadPage(Gtk.Box):
     path - 文件在服务器上的绝对路径
     name - 文件在服务器上的名称
     savePath - 保存到的绝对路径
-    saveName - 保存时的文件名
+    save_name - 保存时的文件名
     currRange - 当前下载的进度, 以字节为单位, 在HTTP Header中可用.
     state - 任务状态 
     link - 文件的下载最终URL, 有效期大约是8小时, 超时后要重新获取.
@@ -78,6 +102,8 @@ class DownloadPage(Gtk.Box):
     def __init__(self, app):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self.app = app
+        self.shutdown = Shutdown()
+
         if Config.GTK_GE_312:
             self.headerbar = Gtk.HeaderBar()
             self.headerbar.props.show_close_button = True
@@ -116,6 +142,17 @@ class DownloadPage(Gtk.Box):
             open_folder_button.connect('clicked',
                                        self.on_open_folder_button_clicked)
             self.headerbar.pack_start(open_folder_button)
+
+            shutdown_button = Gtk.ToggleButton()
+            shutdown_img = Gtk.Image.new_from_icon_name(
+                    'system-shutdown-symbolic', Gtk.IconSize.SMALL_TOOLBAR)
+            shutdown_button.set_image(shutdown_img)
+            shutdown_button.set_tooltip_text(
+                    _('Shutdown system after all tasks have finished'))
+            shutdown_button.set_sensitive(self.shutdown.can_shutdown)
+            shutdown_button.props.margin_start = 5
+            self.shutdown_button = shutdown_button
+            self.headerbar.pack_start(shutdown_button)
 
             right_box = Gtk.Box()
             right_box_context = right_box.get_style_context()
@@ -160,6 +197,15 @@ class DownloadPage(Gtk.Box):
             open_folder_button.props.margin_left = 40
             control_box.pack_start(open_folder_button, False, False, 0)
 
+            shutdown_button = Gtk.ToggleButton()
+            shutdown_button.set_label(_('Shutdown'))
+            shutdown_button.set_tooltip_text(
+                    _('Shutdown system after all tasks have finished'))
+            shutdown_button.set_sensitive(self.shutdown.can_shutdown)
+            shutdown_button.props.margin_left = 5
+            self.shutdown_button = shutdown_button
+            control_box.pack_start(shutdown_button, False, False, 0)
+
             remove_finished_button = Gtk.Button.new_with_label(
                     _('Remove completed tasks'))
             remove_finished_button.connect('clicked',
@@ -177,7 +223,7 @@ class DownloadPage(Gtk.Box):
         self.pack_start(scrolled_win, True, True, 0)
 
         # name, path, fs_id, size, currsize, link,
-        # isdir, saveDir, saveName, state, statename,
+        # isdir, save_dir, save_name, state, statename,
         # humansize, percent, tooltip
         self.liststore = Gtk.ListStore(str, str, str, GObject.TYPE_INT64,
                                        GObject.TYPE_INT64, str,
@@ -356,7 +402,7 @@ class DownloadPage(Gtk.Box):
             self.app_infos.pop(fs_id, None)
 
     # Open API
-    def add_tasks(self, pcs_files):
+    def add_tasks(self, pcs_files, dirname=''):
         '''建立批量下载任务, 包括目录'''
         def on_list_dir(info, error=None):
             path, pcs_files = info
@@ -370,7 +416,7 @@ class DownloadPage(Gtk.Box):
                 dialog.run()
                 dialog.destroy()
                 return
-            self.add_tasks(pcs_files)
+            self.add_tasks(pcs_files, dirname)
 
         self.check_first()
         for pcs_file in pcs_files:
@@ -379,10 +425,10 @@ class DownloadPage(Gtk.Box):
                                  self.app.tokens, pcs_file['path'],
                                  callback=on_list_dir)
             else:
-                self.add_task(pcs_file)
+                self.add_task(pcs_file, dirname)
         self.check_commit(force=True)
 
-    def add_task(self, pcs_file):
+    def add_task(self, pcs_file, dirname=''):
         '''加入新的下载任务'''
         if pcs_file['isdir']:
             return
@@ -395,12 +441,14 @@ class DownloadPage(Gtk.Box):
             if row[STATE_COL] == State.FINISHED:
                 self.launch_app(fs_id)
             return
-        saveDir = os.path.split(self.app.profile['save-dir'] + 
-                                pcs_file['path'])[0]
-        saveName = pcs_file['server_filename']
+        if not dirname:
+            dirname = self.app.profile['save-dir']
+        save_dir = os.path.dirname(
+                os.path.join(dirname, pcs_file['path'][1:]))
+        save_name = pcs_file['server_filename']
         human_size = util.get_human_size(pcs_file['size'])[0]
         tooltip = gutil.escape(_('From {0}\nTo {1}').format(pcs_file['path'],
-                                                            saveDir))
+                                                            save_dir))
         task = (
             pcs_file['server_filename'],
             pcs_file['path'],
@@ -409,8 +457,8 @@ class DownloadPage(Gtk.Box):
             0,
             '',  # pcs['dlink' removed in new version.
             pcs_file['isdir'],
-            saveName,
-            saveDir,
+            save_name,
+            save_dir,
             State.WAITING,
             StateNames[State.WAITING],
             human_size,
@@ -421,13 +469,22 @@ class DownloadPage(Gtk.Box):
         self.add_task_db(task)
         self.scan_tasks()
 
-    def scan_tasks(self):
-        '''扫描所有下载任务, 并在需要时启动新的下载'''
+    def scan_tasks(self, ignore_shutdown=False):
+        '''扫描所有下载任务, 并在需要时启动新的下载.'''
         for row in self.liststore:
-            if len(self.workers.keys()) >= self.app.profile['concurr-tasks']:
+            if len(self.workers.keys()) >= self.app.profile['concurr-download']:
                 break
             if row[STATE_COL] == State.WAITING:
                 self.start_worker(row)
+
+        if not self.shutdown_button.get_active() or ignore_shutdown:
+            return
+        # Shutdown system after all tasks have finished
+        for row in self.liststore:
+            if (row[STATE_COL] not in
+                    (State.PAUSED, State.FINISHED, State.CANCELED)):
+                return
+        self.shutdown.shutdown()
 
     def start_worker(self, row):
         '''为task新建一个后台下载线程, 并开始下载.'''
@@ -586,6 +643,16 @@ class DownloadPage(Gtk.Box):
         # 文件片段
         if not row:
             return
+
+        # 如果任务尚未下载完, 弹出一个对话框, 让用户确认删除
+        if row[STATE_COL] != State.FINISHED:
+            if self.app.profile['confirm-download-deletion']:
+                dialog = ConfirmDialog(self.app, False)
+                response = dialog.run()
+                dialog.destroy()
+                if response != Gtk.ResponseType.YES:
+                    return
+
         if row[STATE_COL] == State.DOWNLOADING:
             self.stop_worker(row)
         elif row[CURRSIZE_COL] < row[SIZE_COL]:
@@ -609,14 +676,14 @@ class DownloadPage(Gtk.Box):
             # update speed label at each 5s
             self.download_speed_sid = GLib.timeout_add(
                     self.DOWNLOAD_SPEED_INTERVAL, self.download_speed_interval)
-        self.speed_label.set_text('0 kb/s')
+        self.speed_label.set_text('0 kB/s')
 
     def download_speed_add(self, size):
         self.download_speed_received += size
 
     def download_speed_interval(self):
         speed = self.download_speed_received // self.DOWNLOAD_SPEED_INTERVAL
-        self.speed_label.set_text('%s kb/s' % speed)
+        self.speed_label.set_text('%s kB/s' % speed)
         # reset received data size
         self.download_speed_received = 0
         return True
@@ -638,7 +705,7 @@ class DownloadPage(Gtk.Box):
                 return
             operator(row, scan=False)
         self.check_commit(force=True)
-        self.scan_tasks()
+        self.scan_tasks(ignore_shutdown=True)
 
     def on_start_button_clicked(self, button):
         self.operate_selected_rows(self.start_task)

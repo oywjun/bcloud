@@ -1,5 +1,5 @@
 
-# Copyright (C) 2014 LiuLang <gsushzhsosgsu@gmail.com>
+# Copyright (C) 2014-2015 LiuLang <gsushzhsosgsu@gmail.com>
 # Use of this source code is governed by GPLv3 license that can be found
 # in http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -151,19 +151,26 @@ class SigninDialog(Gtk.Dialog):
         self.password_entry.set_placeholder_text(_('Password ..'))
         self.password_entry.props.visibility = False
         self.password_entry.connect('changed', self.on_password_entry_changed)
+        self.password_entry.connect('activate', self.on_password_entry_activate)
         box.pack_start(self.password_entry, False, False, 0)
 
         self.remember_check = Gtk.CheckButton.new_with_label(
                 _('Remember Password'))
         self.remember_check.props.margin_top = 20
-        self.remember_check.props.margin_left = 20
+        if Config.GTK_GE_312:
+            self.remember_check.props.margin_start = 20
+        else:
+            self.remember_check.props.margin_left = 20
         box.pack_start(self.remember_check, False, False, 0)
         self.remember_check.connect('toggled', self.on_remember_check_toggled)
 
         self.signin_check = Gtk.CheckButton.new_with_label(
                 _('Signin Automatically'))
         self.signin_check.set_sensitive(False)
-        self.signin_check.props.margin_left = 20
+        if Config.GTK_GE_312:
+            self.signin_check.props.margin_start = 20
+        else:
+            self.signin_check.props.margin_left = 20
         box.pack_start(self.signin_check, False, False, 0)
         self.signin_check.connect('toggled', self.on_signin_check_toggled)
 
@@ -265,6 +272,15 @@ class SigninDialog(Gtk.Dialog):
         button.set_sensitive(False)
         self.signin()
 
+    def on_password_entry_activate(self, entry):
+        if (len(self.password_entry.get_text()) <= 1 or
+                not self.username_combo.get_child().get_text()):
+            return
+        self.infobar.hide()
+        self.signin_button.set_label(_('In process...'))
+        self.signin_button.set_sensitive(False)
+        self.signin()
+
     def signin(self):
         def on_get_bdstoken(bdstoken, error=None):
             if error or not bdstoken:
@@ -278,7 +294,6 @@ class SigninDialog(Gtk.Dialog):
                                     dump=True)
 
         def on_post_login(info, error=None):
-            print('on post login:', info, error)
             if error or not info:
                 logger.error('SigninDialog.on_post_login: %s, %s' %
                              (info, error))
@@ -296,7 +311,7 @@ class SigninDialog(Gtk.Dialog):
                     nonlocal verifycode
                     nonlocal codeString
                     vcodetype = query['vcodetype']
-                    codeString = query['codestring']
+                    codeString = query['codeString']
                     dialog = SigninVcodeDialog(self, username, cookie,
                                                tokens['token'], codeString,
                                                vcodetype)
@@ -310,7 +325,7 @@ class SigninDialog(Gtk.Dialog):
                     else:
                         self.signin_button.set_label(_('Get bdstoken...'))
                         gutil.async_call(auth.post_login, cookie,
-                                         tokens['token'], username,
+                                         tokens, username,
                                          password_enc, rsakey, verifycode,
                                          codeString, callback=on_post_login)
                 # 密码错误
@@ -409,7 +424,7 @@ class SigninDialog(Gtk.Dialog):
                 logger.error('SigninDialog.on_get_BAIDUID: %s, %s' %
                              (uid_cookie, error))
                 self.signin_failed(
-                        _('Failed to get BAIDUID cookie, please try agin.'))
+                        _('Failed to get BAIDUID cookie, please try again.'))
             else:
                 cookie.load_list(uid_cookie)
                 self.signin_button.set_label(_('Get TOKEN...'))

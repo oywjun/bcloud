@@ -1,5 +1,5 @@
 
-# Copyright (C) 2014 LiuLang <gsushzhsosgsu@gmail.com>
+# Copyright (C) 2014-2015 LiuLang <gsushzhsosgsu@gmail.com>
 # Use of this source code is governed by GPLv3 license that can be found
 # in http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -81,7 +81,7 @@ class TrashPage(Gtk.Box):
             reload_img = Gtk.Image.new_from_icon_name('view-refresh-symbolic',
                     Gtk.IconSize.SMALL_TOOLBAR)
             reload_button.set_image(reload_img)
-            reload_button.set_tooltip_text(_('Reload'))
+            reload_button.set_tooltip_text(_('Reload (F5)'))
             reload_button.connect('clicked', self.on_reload_button_clicked)
             self.headerbar.pack_end(reload_button)
 
@@ -97,7 +97,7 @@ class TrashPage(Gtk.Box):
             restore_button.connect('clicked', self.on_restore_button_clicked)
             control_box.pack_start(restore_button, False, False, 0)
 
-            reload_button = Gtk.Button.new_with_label(_('Reload'))
+            reload_button = Gtk.Button.new_with_label(_('Reload (F5)'))
             reload_button.connect('clicked', self.on_reload_button_clicked)
             control_box.pack_start(reload_button, False, False, 0)
 

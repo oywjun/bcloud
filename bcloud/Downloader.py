@@ -1,4 +1,5 @@
-# Copyright (C) 2014 LiuLang <gsushzhsosgsu@gmail.com>
+
+# Copyright (C) 2014-2015 LiuLang <gsushzhsosgsu@gmail.com>
 # Use of this source code is governed by GPLv3 license that can be found
 # in http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -15,6 +16,7 @@ from urllib import request
 from gi.repository import GLib
 from gi.repository import GObject
 
+from bcloud import const
 from bcloud.const import State, DownloadMode
 from bcloud import net
 from bcloud import pcs
@@ -65,12 +67,21 @@ class DownloadBatch(threading.Thread):
         logger.debug('DownloadBatch.get_req: %s, %s' % (start_size, end_size))
         opener = request.build_opener()
         content_range = 'bytes={0}-{1}'.format(start_size, end_size)
-        opener.addheaders = [('Range', content_range)]
+        opener.addheaders = [
+            ('Range', content_range),
+            ('User-Agent', const.USER_AGENT),
+            ('Referer', const.PAN_REFERER),
+        ]
         for i in range(RETRIES):
             try:
                 return opener.open(self.url, timeout=self.timeout)
             except OSError:
                 logger.error(traceback.format_exc())
+                self.queue.put((self.id_, BATCH_ERROR), block=False)
+                return None
+            except:
+                self.queue.put((self.id_, BATCH_ERROR), block=False)
+                return None
         else:
             return None
 
@@ -91,11 +102,20 @@ class DownloadBatch(threading.Thread):
                     if block:
                         break
                 except (OSError, AttributeError):
+                    #self.queue.put((self.id_, BATCH_ERROR), block=False)
                     logger.error(traceback.format_exc())
                     req = None
+                except  :
+                    req=None
+                    logger.error( 'Time out occured.')
+                    #self.queue.put((self.id_, BATCH_ERROR), block=False)
+                    #return
+
+                   
             else:
                 logger.error('DownloadBatch, block is empty: %s, %s, %s, %s' %
-                             (offset, self.start_size, self.end_size, block))
+                             (offset, self.start_size, self.end_size,
+                              len(block)))
                 self.queue.put((self.id_, BATCH_ERROR), block=False)
                 return
 

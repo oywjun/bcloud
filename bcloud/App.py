@@ -1,4 +1,5 @@
-# Copyright (C) 2014 LiuLang <gsushzhsosgsu@gmail.com>
+
+# Copyright (C) 2014-2015 LiuLang <gsushzhsosgsu@gmail.com>
 # Use of this source code is governed by GPLv3 license that can be found
 # in http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -7,11 +8,15 @@ import random
 import time
 import traceback
 
+import gi
+gi.require_version('Gdk', '3.0')
 from gi.repository import Gdk
 from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import GObject
+gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
+gi.require_version('Notify', '0.7')
 from gi.repository import Notify
 
 from bcloud import Config
@@ -33,6 +38,7 @@ from bcloud.SharePage import SharePage
 from bcloud.SigninDialog import SigninDialog
 from bcloud.TrashPage import TrashPage
 from bcloud.UploadPage import UploadPage
+from bcloud.FileWatcher import WatchFileChange
 
 try:
 # Ubuntu Unity uses appindicator instead of status icon
@@ -69,6 +75,8 @@ class App:
         self.app.connect('startup', self.on_app_startup)
         self.app.connect('activate', self.on_app_activate)
         self.app.connect('shutdown', self.on_app_shutdown)
+
+        self.filewatcher = None
 
     def on_app_startup(self, app):
         GLib.set_application_name(Config.APPNAME)
@@ -147,9 +155,10 @@ class App:
         nav_window.add(nav_treeview)
 
         self.progressbar = Gtk.ProgressBar()
-        self.progressbar.set_show_text(True)
-        self.progressbar.set_text(_('Unknown'))
         left_box.pack_end(self.progressbar, False, False, 0)
+
+        self.capicity_label = Gtk.Label(_('Unknown'))
+        left_box.pack_end(self.capicity_label, False, False, 0)
 
         self.img_avatar = Gtk.Image()
         self.img_avatar.props.halign = Gtk.Align.CENTER
@@ -159,15 +168,28 @@ class App:
         self.notebook.props.show_tabs = False
         paned.add2(self.notebook)
 
+        # Add accelerator
+        self.accel_group = Gtk.AccelGroup()
+        self.window.add_accel_group(self.accel_group)
+        key, mod = Gtk.accelerator_parse('F5')
+        self.window.connect('activate-default', self.reload_current_page)
+        self.window.add_accelerator('activate-default',
+                self.accel_group, key, mod, Gtk.AccelFlags.VISIBLE)
+
     def on_app_activate(self, app):
         if not self.profile:
             self.show_signin_dialog()
         self.window.show_all()
+        if self.profile['startup-minimized']:
+            self.window.hide()
         if hasattr(self, 'home_page'):
             self.switch_page(self.home_page)
 
     def on_app_shutdown(self, app):
         '''Dump profile content to disk'''
+
+        if self.filewatcher:
+            self.filewatcher.stop()
         if self.profile:
             self.upload_page.on_destroy()
             self.download_page.on_destroy()
@@ -285,7 +307,7 @@ class App:
         total = quota_info['total']
         used_size = util.get_human_size(used)[0]
         total_size = util.get_human_size(total)[0]
-        self.progressbar.set_text(used_size + ' / ' + total_size)
+        self.capicity_label.set_text('{0} / {1}'.format(used_size, total_size))
         self.progressbar.set_fraction(used / total)
 
     def update_avatar(self):
@@ -301,6 +323,8 @@ class App:
                     self.profile['username'],
                     uname,
                 ])
+        if not self.profile['display-avatar']:
+            return
         self.img_avatar.props.tooltip_text = ''
         cache_path = Config.get_cache_path(self.profile['username'])
         gutil.async_call(gutil.update_avatar, self.cookie, self.tokens,
@@ -344,6 +368,16 @@ class App:
         append_page(self.upload_page)
 
         self.notebook.show_all()
+
+        self.init_filewatcher()
+
+    def init_filewatcher(self):
+        enable_sync = self.profile['enable-sync']
+        if enable_sync:
+            sync_dir = self.profile['sync-dir']
+            #self.filewatcher = WatchFileChange(sync_dir, self.upload_page.add_bg_task)
+            self.filewatcher = WatchFileChange(sync_dir, self)
+            self.filewatcher.start()
 
     def reload_current_page(self, *args, **kwds):
         '''重新载入当前页面.

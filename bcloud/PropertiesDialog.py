@@ -1,5 +1,5 @@
 
-# Copyright (C) 2014 LiuLang <gsushzhsosgsu@gmail.com>
+# Copyright (C) 2014-2015 LiuLang <gsushzhsosgsu@gmail.com>
 # Use of this source code is governed by GPLv3 license that can be found
 # in http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -35,7 +35,10 @@ class PropertiesDialog(Gtk.Dialog):
 
         grid = Gtk.Grid()
         grid.props.row_spacing = 8
-        grid.props.margin_left = 15
+        if Config.GTK_GE_312:
+            grid.props.margin_start = 15
+        else:
+            grid.props.margin_left = 15
         grid.props.column_spacing = 15
         box.pack_start(grid, True, True, 10)
 
@@ -101,7 +104,10 @@ class FolderPropertyDialog(Gtk.Dialog):
 
         grid = Gtk.Grid()
         grid.props.row_spacing = 8
-        grid.props.margin_left = 15
+        if Config.GTK_GE_312:
+            grid.props.margin_start = 15
+        else:
+            grid.props.margin_left = 15
         grid.props.column_spacing = 15
         box.pack_start(grid, True, True, 10)
 

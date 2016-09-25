@@ -1,3 +1,42 @@
+v3.8.2 - 2015.12.25
+* Fixed: failed to get bdstoken (pull#214, by @zhaihj).
+
+v3.8.1 - 2015.9.9
+* Fixed: failed to sign in (pull#177, by @mhohai).
+
+v3.7.2 - 2015.7.5
+* Fixed: margin_left is deprecated in gtk3.12
+* Fixed; shrink left side panel
+* Fixed: ConfirmDialog does not exists
+
+v3.7.1 - 2015.5.16
+* i18n updated
+* Redesign Preferences dialog
+* Update contributor list
+* Fixed: syntax error
+* Support shutdown system automatically
+* Fixed: State has no attribute `DOWNLOADED`
+* Support sync dir
+
+v3.6.1 - 2015.1.10
+* Add `display-avatar` option
+* App logo updated
+* i18n updated
+* Fixed: Gtk.Button.new_from_icon_name() requires two parameters;
+* Fixed: kb -> kB
+
+v3.5.10 - 2014.12.6
+* Fixed: KeyError in SigninDialog
+* Fixed: TypeError, string indices must be integers in SigninDialog
+
+v3.5.9 - 2014.11.26
+* Fixed: check file is empty or not before downloading it
+* Add SIDEBAR class to treeview
+* Fixed: wrong parameter in get_token()
+* Fixed: failed to check isdir option in SharePage
+* remove Gio package
+* i18n updated
+
 v3.5.8 - 2014.11.7
 * Feature: add share-page
 * Feature: support appindicator in Ubuntu Unity desktop

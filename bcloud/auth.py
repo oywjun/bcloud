@@ -1,5 +1,5 @@
 
-# Copyright (C) 2013-2014 LiuLang <gsushzhsosgsu@gmail.com>
+# Copyright (C) 2014-2015 LiuLang <gsushzhsosgsu@gmail.com>
 # Use of this source code is governed by GPLv3 license that can be found
 # in http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -252,6 +252,9 @@ def post_login(cookie, tokens, username, password, rsakey, verifycode='',
 
         if err_no == 0:
             return (0, auth_cookie)
+        # #!! not bind cellphone
+        elif err_no == 18:
+            return (0, auth_cookie)
         # 要输入验证码
         elif err_no == 257:
             return (err_no, query)
@@ -273,7 +276,7 @@ def parse_bdstoken(content):
     @return 返回bdstoken
     '''
     bdstoken = ''
-    bds_re = re.compile('BDSTOKEN\s*=\s*"([^"]+)"')
+    bds_re = re.compile('"bdstoken"\s*:\s*"([^"]+)"', re.IGNORECASE)
     bds_match = bds_re.search(content)
     if bds_match:
         bdstoken = bds_match.group(1)

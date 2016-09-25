@@ -1,5 +1,5 @@
 
-# Copyright (C) 2013-2014 LiuLang <gsushzhsosgsu@gmail.com>
+# Copyright (C) 2014-2015 LiuLang <gsushzhsosgsu@gmail.com>
 # Use of this source code is governed by GPLv3 license that can be found
 # in http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -44,6 +44,10 @@ def urloption(url, headers={}, retries=RETRIES):
             return resp
         except OSError:
             logger.error(traceback.format_exc())
+            #return None
+        except:
+            logger.error(traceback.format_exc())
+            #return None
     return None
 
 
@@ -62,6 +66,10 @@ def urlopen_simple(url, retries=RETRIES, timeout=TIMEOUT):
             return urllib.request.urlopen(url, timeout=timeout)
         except OSError:
             logger.error(traceback.format_exc())
+            
+        except :
+            logger.error(traceback.format_exc())
+            
     return None
 
 def urlopen(url, headers={}, data=None, retries=RETRIES, timeout=TIMEOUT):
@@ -93,6 +101,10 @@ def urlopen(url, headers={}, data=None, retries=RETRIES, timeout=TIMEOUT):
             return req
         except OSError:
             logger.error(traceback.format_exc())
+            
+        except:
+            logger.error(traceback.format_exc())
+            
     return None
 
 def urlopen_without_redirect(url, headers={}, data=None, retries=RETRIES):
@@ -116,6 +128,9 @@ def urlopen_without_redirect(url, headers={}, data=None, retries=RETRIES):
             return conn.getresponse()
         except OSError:
             logger.error(traceback.format_exc())
+        except:
+            logger.error(traceback.format_exc())
+            #return None
     return None
 
 def post_multipart(url, headers, fields, files, retries=RETRIES):
@@ -142,6 +157,9 @@ def post_multipart(url, headers, fields, files, retries=RETRIES):
             return req
         except OSError:
             logger.error(traceback.format_exc())
+        except:
+            logger.error(traceback.format_exc())
+            #return None
     return None
 
 def encode_multipart_formdata(fields, files):
